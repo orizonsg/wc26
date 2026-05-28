@@ -636,6 +636,7 @@ function doGet(e) { return doPost(e); }</textarea>
         </div>
         <button class="save-btn blue" onclick="autoFetchResults()" style="margin-top:10px;width:100%;">Auto-fetch results now</button>
         <p id="fetch-status" style="font-size:11px;color:var(--muted);margin-top:6px;"></p>
+        <p id="last-fetch-time" style="font-size:10px;color:var(--muted2);margin-top:4px;letter-spacing:.04em;"></p>
       </div>
 
       <div class="card">
@@ -721,6 +722,59 @@ function startCountdowns(){
     renderCountdown('countdown-champion', PICKS_DEADLINE, 'Champion');
     renderCountdown('countdown-knockout', KO_UNLOCK_DATE, 'Knockout Stage');
   }, 1000);
+  // Auto-fetch results every 60 seconds if API key is saved
+  startAutoFetch();
+}
+let _lastResultsHash='';
+function startAutoFetch(){
+  const key=localStorage.getItem('orizon_fdorg_key');
+  if(!key)return; // No key saved, skip
+  // Run immediately on load (silently), then every 60s
+  silentFetch();
+  setInterval(silentFetch, 60000);
+}
+async function silentFetch(){
+  const key=localStorage.getItem('orizon_fdorg_key');
+  if(!key)return;
+  try{
+    const r=await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED',{
+      headers:{'X-Auth-Token':key}
+    });
+    if(!r.ok)return;
+    const data=await r.json();
+    const matches=data.matches||[];
+    // Check hash to avoid unnecessary saves
+    const hash=JSON.stringify(matches.map(m=>m.id+m.score.winner).sort());
+    if(hash===_lastResultsHash)return;
+    _lastResultsHash=hash;
+    let updated=0;
+    matches.forEach(m=>{
+      if(m.status!=='FINISHED')return;
+      const home=mapTeam(m.homeTeam.name);
+      const away=mapTeam(m.awayTeam.name);
+      const winner=m.score.winner;
+      let result=null;
+      if(winner==='HOME_TEAM')result='home';
+      else if(winner==='AWAY_TEAM')result='away';
+      else if(winner==='DRAW')result='draw';
+      if(result){
+        const matchKey=getMatchKey(home,away);
+        if(matchKey&&results[matchKey]!==result){results[matchKey]=result;updated++;}
+      }
+    });
+    if(updated>0){
+      await sheetsSet('results','official',results);
+      // Update last-fetch display in admin panel if open
+      const el=document.getElementById('last-fetch-time');
+      if(el)el.textContent='Last updated: '+new Date().toLocaleTimeString('en-SG');
+      console.log('[WC2026] Auto-fetched '+updated+' new result(s)');
+    }
+    // Always update timestamp
+    const el=document.getElementById('last-fetch-time');
+    if(el)el.textContent='Last checked: '+new Date().toLocaleTimeString('en-SG');
+  }catch(e){
+    console.log('[WC2026] Auto-fetch error:',e);
+  }
 }
 
 const GROUPS = {
@@ -1298,6 +1352,7 @@ async function autoFetchResults(){
       showToast(updated+' result(s) auto-updated!');
       status.textContent=updated+' match results fetched and saved successfully.';
       status.style.color='var(--green)';
+      const ftEl=document.getElementById('last-fetch-time');if(ftEl)ftEl.textContent='Last updated: '+new Date().toLocaleTimeString('en-SG');
     } else {
       status.textContent='No new finished matches found yet.';
       status.style.color='var(--muted)';
