@@ -908,7 +908,7 @@ function getGroupMatches(){
 let wallet=null,isAdmin=false,adminWallets=[],username=null;
 let predictions={groups:{},table:{},knockout:{},champion:''};
 let results={};
-let sheetsUrl=localStorage.getItem('orizon_sheets_url')||'';
+let sheetsUrl=localStorage.getItem('orizon_sheets_url')||'https://orizon-sheets-proxy.orizonsg.workers.dev';
 
 // ══════════════════ WALLET ══════════════════
 async function toggleWallet(){wallet?disconnectWallet():await connectWallet();}
