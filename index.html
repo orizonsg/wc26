@@ -1004,9 +1004,13 @@ async function sheetsGet(sheet,key){
 async function sheetsSet(sheet,key,value){
   if(!sheetsUrl){localSet(sheet,key,value);return true;}
   try{
-    await fetch(sheetsUrl,{method:'POST',body:JSON.stringify({action:'save',sheet,key,value})});
+    await fetch(sheetsUrl,{
+      method:'POST',
+      mode:'no-cors', // bypass CORS preflight — required for Apps Script from external origins
+      body:JSON.stringify({action:'save',sheet,key,value})
+    });
     return true;
-  }catch{localSet(sheet,key,value);return false;}
+  }catch(e){localSet(sheet,key,value);return false;}
 }
 async function sheetsAll(sheet){
   if(!sheetsUrl)return localAll(sheet);
