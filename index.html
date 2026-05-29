@@ -575,39 +575,57 @@ body::-webkit-scrollbar{display:none;}
 
     <div class="card" style="max-width:560px;">
       <div class="card-title">Apps Script — copy & deploy</div>
-      <textarea class="script-area" readonly>function doPost(e) {
+      <textarea class="script-area" readonly>function doGet(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var data = JSON.parse(e.postData.contents);
-  var action = data.action;
-  var sheet = ss.getSheetByName(data.sheet || action);
+  var p = e.parameter;
+  var action = p.action;
+  var sheetName = p.sheet || action;
+  var sheet = ss.getSheetByName(sheetName);
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+
   if (action === 'save') {
+    var key = p.key;
+    var parsed = JSON.parse(p.value);
     var rows = sheet.getDataRange().getValues();
     var found = false;
     for (var i = 1; i < rows.length; i++) {
-      if (rows[i][0] === data.key) {
-        sheet.getRange(i+1, 2).setValue(JSON.stringify(data.value));
+      if (rows[i][0] === key) {
+        sheet.getRange(i+1, 2).setValue(JSON.stringify(parsed));
+        if (sheetName === 'users' && parsed.username) {
+          sheet.getRange(i+1, 3).setValue(parsed.username);
+          sheet.getRange(i+1, 4).setValue(new Date());
+        }
         found = true; break;
       }
     }
-    if (!found) sheet.appendRow([data.key, JSON.stringify(data.value), new Date()]);
-    return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+    if (!found) {
+      var newRow = [key, JSON.stringify(parsed), '', new Date()];
+      if (sheetName === 'users' && parsed.username) newRow[2] = parsed.username;
+      sheet.appendRow(newRow);
+    }
+    output.setContent(JSON.stringify({ok:true}));
+    return output;
   }
+
   if (action === 'get') {
     var rows = sheet.getDataRange().getValues();
     for (var i = 1; i < rows.length; i++) {
-      if (rows[i][0] === data.key) return ContentService.createTextOutput(rows[i][1]).setMimeType(ContentService.MimeType.JSON);
+      if (rows[i][0] === p.key) { output.setContent(rows[i][1]); return output; }
     }
-    return ContentService.createTextOutput('null').setMimeType(ContentService.MimeType.JSON);
+    output.setContent('null'); return output;
   }
+
   if (action === 'all') {
     var rows = sheet.getDataRange().getValues();
     var out = {};
     for (var i = 1; i < rows.length; i++) { if(rows[i][0]) out[rows[i][0]] = rows[i][1]; }
-    return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
+    output.setContent(JSON.stringify(out)); return output;
   }
-  return ContentService.createTextOutput('{}').setMimeType(ContentService.MimeType.JSON);
+
+  output.setContent('{}'); return output;
 }
-function doGet(e) { return doPost(e); }</textarea>
+function doPost(e) { return doGet(e); }</textarea>
       <span class="setup-label">Google Apps Script deployment URL</span>
       <input class="setup-input" id="sheets-url" placeholder="https://script.google.com/macros/s/..."/>
       <button class="save-btn blue" onclick="saveSheetUrl()" style="margin-top:12px;">Save & connect</button>
@@ -1004,11 +1022,14 @@ async function sheetsGet(sheet,key){
 async function sheetsSet(sheet,key,value){
   if(!sheetsUrl){localSet(sheet,key,value);return true;}
   try{
-    await fetch(sheetsUrl,{
-      method:'POST',
-      mode:'no-cors', // bypass CORS preflight — required for Apps Script from external origins
-      body:JSON.stringify({action:'save',sheet,key,value})
+    // Use GET with URL params — avoids all CORS/redirect issues with Apps Script
+    const params=new URLSearchParams({
+      action:'save',
+      sheet:sheet,
+      key:key,
+      value:JSON.stringify(value)
     });
+    await fetch(sheetsUrl+'?'+params.toString(),{mode:'no-cors'});
     return true;
   }catch(e){localSet(sheet,key,value);return false;}
 }
