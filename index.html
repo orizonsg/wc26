@@ -389,6 +389,61 @@ body::-webkit-scrollbar{display:none;}
   background:var(--teal);display:inline-block;flex-shrink:0;opacity:.6;
 }
 
+/* ─── AWARDS ─── */
+.awards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
+.awards-card{max-width:100%;}
+.awards-input{
+  width:100%;background:var(--surface2);
+  border:1px solid rgba(0,200,180,0.15);
+  color:var(--text);border-radius:var(--r);
+  padding:9px 12px;font-family:var(--font-b);font-size:13px;
+  transition:border-color .2s;
+}
+.awards-input:focus{outline:none;border-color:var(--teal);}
+.awards-input:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ─── SAVE PILL ─── */
+.save-pill{
+  padding:10px 28px;border-radius:40px;
+  border:1px solid var(--teal);background:rgba(0,200,180,0.08);
+  color:var(--teal2);font-family:var(--font-b);font-size:13px;
+  font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.06em;
+}
+.save-pill:hover{background:var(--teal);color:#000;}
+.save-pill:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ─── DRAG AND DROP GROUP TABLE ─── */
+.drag-list{list-style:none;padding:0;margin:0;}
+.drag-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:var(--r);
+  margin-bottom:4px;
+  background:var(--surface2);
+  border:1px solid rgba(0,200,180,0.1);
+  cursor:grab;transition:background .15s,border-color .15s;
+  user-select:none;
+}
+.drag-item:last-child{margin-bottom:0;}
+.drag-item:hover{border-color:rgba(0,200,180,0.25);background:var(--surface3);}
+.drag-item.dragging{opacity:.5;cursor:grabbing;}
+.drag-item.drag-over{border-color:var(--teal);background:rgba(0,200,180,0.08);}
+.drag-handle{font-size:14px;color:var(--muted2);flex-shrink:0;cursor:grab;}
+.drag-handle.locked{cursor:not-allowed;opacity:.4;}
+.drag-pos{
+  font-family:var(--font-d);font-size:10px;color:var(--teal);
+  min-width:28px;letter-spacing:.06em;flex-shrink:0;
+}
+.drag-team-name{font-size:12px;color:var(--text);flex:1;}
+.drag-flag{width:20px;height:15px;border-radius:2px;flex-shrink:0;}
+
+/* ─── SCORING SPACING ─── */
+.scoring-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:0;}
+.score-card{
+  background:var(--surface);border:1px solid rgba(0,200,180,0.1);
+  border-radius:var(--r2);padding:1.75rem 1.5rem;text-align:center;
+}
+.score-desc{font-size:12px;color:var(--muted);line-height:1.8;font-weight:300;margin-top:8px;}
+
 /* ─── LOADING ─── */
 .loading{text-align:center;padding:3rem;color:var(--muted);font-size:13px;letter-spacing:.06em;}
 
@@ -418,6 +473,7 @@ body::-webkit-scrollbar{display:none;}
   <button class="tab" onclick="showTab('grouptable',this)">Group Table</button>
   <button class="tab" onclick="showTab('knockout',this)">Knockout</button>
   <button class="tab" onclick="showTab('champion',this)">Champion</button>
+  <button class="tab" onclick="showTab('awards',this)">Awards</button>
   <button class="tab" onclick="showTab('leaderboard',this)">Leaderboard</button>
   <button class="tab" onclick="showTab('scoring',this)">Scoring</button>
   <button class="tab" onclick="showTab('prizes',this)">Prizes</button>
@@ -488,8 +544,40 @@ body::-webkit-scrollbar{display:none;}
       <select class="champ-select" id="champ-sel">
         <option value="">-- Select a team --</option>
       </select>
-      <div class="autosave-hint" style="margin-top:1rem;">Picks save automatically when you make a selection</div>
+      <button class="save-pill" onclick="savePredictions()" style="display:block;margin-top:1rem;">Save champion pick</button>
     </div>
+  </div>
+
+  <!-- AWARDS -->
+  <div id="tab-awards" class="section" style="display:none;">
+    <div class="s-hero">
+      <div class="s-title">Awards <span class="accent">Predictions</span></div>
+      <div class="s-desc">Predict the individual award winners — 5 points each for a correct pick.</div>
+      <div id="countdown-awards"></div>
+    </div>
+    <div id="user-bar-awards"></div>
+    <div class="awards-grid">
+      <div class="card awards-card">
+        <div class="card-title">🥅 Golden Glove</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300;">Best goalkeeper of the tournament</p>
+        <input class="awards-input" id="award-glove-player" type="text" maxlength="40" placeholder="Player name"/>
+        <input class="awards-input" id="award-glove-team" type="text" maxlength="40" placeholder="Country / Team" style="margin-top:8px;"/>
+      </div>
+      <div class="card awards-card">
+        <div class="card-title">👟 Golden Boot</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300;">Top scorer of the tournament</p>
+        <input class="awards-input" id="award-boot-player" type="text" maxlength="40" placeholder="Player name"/>
+        <input class="awards-input" id="award-boot-team" type="text" maxlength="40" placeholder="Country / Team" style="margin-top:8px;"/>
+      </div>
+      <div class="card awards-card">
+        <div class="card-title">🎯 Top Assister</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300;">Most assists of the tournament</p>
+        <input class="awards-input" id="award-assist-player" type="text" maxlength="40" placeholder="Player name"/>
+        <input class="awards-input" id="award-assist-team" type="text" maxlength="40" placeholder="Country / Team" style="margin-top:8px;"/>
+      </div>
+    </div>
+    <button class="save-pill" onclick="saveAwards()" id="awards-save-btn" style="margin-top:1.25rem;">Save award picks</button>
+    <div class="autosave-hint" id="awards-hint" style="display:none;">Picks are locked</div>
   </div>
 
   <!-- LEADERBOARD -->
@@ -514,13 +602,13 @@ body::-webkit-scrollbar{display:none;}
         <div class="score-icon">⚽</div>
         <div class="score-pts">2 pts</div>
         <div class="score-label">Group Stage</div>
-        <div class="score-desc">Per correctly predicted match result (win/draw/loss)</div>
+        <div class="score-desc">Per correctly predicted match result (win, draw, or loss)</div>
       </div>
       <div class="score-card">
         <div class="score-icon">📊</div>
         <div class="score-pts">1 pt</div>
         <div class="score-label">Group Table</div>
-        <div class="score-desc">Per team placed in the correct final position in the group</div>
+        <div class="score-desc">Per team placed in the correct final position within the group</div>
       </div>
       <div class="score-card">
         <div class="score-icon">🏆</div>
@@ -534,11 +622,29 @@ body::-webkit-scrollbar{display:none;}
         <div class="score-label">Champion</div>
         <div class="score-desc">For correctly predicting the World Cup 2026 winner</div>
       </div>
+      <div class="score-card">
+        <div class="score-icon">🥅</div>
+        <div class="score-pts">5 pts</div>
+        <div class="score-label">Golden Glove</div>
+        <div class="score-desc">For correctly predicting the best goalkeeper of the tournament</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">👟</div>
+        <div class="score-pts">5 pts</div>
+        <div class="score-label">Golden Boot</div>
+        <div class="score-desc">For correctly predicting the top scorer of the tournament</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">🎯</div>
+        <div class="score-pts">5 pts</div>
+        <div class="score-label">Top Assister</div>
+        <div class="score-desc">For correctly predicting the player with the most assists</div>
+      </div>
     </div>
     <div class="card" style="margin-top:1.5rem;max-width:560px;">
       <div class="card-title">Deadlines</div>
-      <div class="deadline-item"><span class="dl-label">Group Stage, Group Table & Champion picks</span><span class="dl-date">12 Jun · 02:00 SGT</span></div>
-      <div class="deadline-item"><span class="dl-label">Knockout Stage picks open</span><span class="dl-date">28 Jun · 00:00 SGT</span></div>
+      <div class="deadline-item"><span class="dl-label">Group Stage, Group Table & Champion picks</span><span class="dl-date">12 Jun · 02:55 SGT</span></div>
+      <div class="deadline-item"><span class="dl-label">Knockout Stage</span><span class="dl-date">Opens per round — see Knockout tab</span></div>
     </div>
   </div>
 
@@ -705,7 +811,7 @@ function flagImg(team){
 
 // Set this to the group stage end date (ISO format, local time)
 // World Cup 2026 group stage ends approximately June 25, 2026
-const PICKS_DEADLINE  = new Date('2026-06-12T02:00:00+08:00'); // Group Stage, Table & Champion lock
+const PICKS_DEADLINE  = new Date('2026-06-12T02:55:00+08:00'); // Group Stage, Table, Champion & Awards lock (5 mins before first match)
 const KO_UNLOCK_DATE  = new Date('2026-06-28T00:00:00+08:00'); // Knockout opens after group stage
 function picksLocked(){ return new Date() >= PICKS_DEADLINE; }
 function koUnlocked(){  return new Date() >= KO_UNLOCK_DATE; }
@@ -724,7 +830,7 @@ function renderCountdown(elId, deadline, label){
   if(!el)return;
   const remaining=cdStr(deadline);
   if(remaining){
-    el.innerHTML=`<div class="countdown-banner"><span class="cd-label">${label} closes in</span><span class="cd-time">${remaining}</span></div>`;
+    el.innerHTML=`<div class="countdown-banner"><span class="cd-label">${label} closes in </span><span class="cd-time">${remaining}</span></div>`;
   } else {
     el.innerHTML=`<div class="countdown-banner locked"><span class="cd-label">🔒 ${label} picks are locked</span></div>`;
   }
@@ -733,12 +839,13 @@ function startCountdowns(){
   renderCountdown('countdown-groups',   PICKS_DEADLINE, 'Group Stage');
   renderCountdown('countdown-grouptable', PICKS_DEADLINE, 'Group Table');
   renderCountdown('countdown-champion', PICKS_DEADLINE, 'Champion');
-  renderCountdown('countdown-knockout', KO_UNLOCK_DATE, 'Knockout Stage');
+  renderCountdown('countdown-awards',   PICKS_DEADLINE, 'Awards');
   setInterval(()=>{
     renderCountdown('countdown-groups',   PICKS_DEADLINE, 'Group Stage');
     renderCountdown('countdown-grouptable', PICKS_DEADLINE, 'Group Table');
     renderCountdown('countdown-champion', PICKS_DEADLINE, 'Champion');
-    renderCountdown('countdown-knockout', KO_UNLOCK_DATE, 'Knockout Stage');
+    renderCountdown('countdown-awards',   PICKS_DEADLINE, 'Awards');
+    KO_ROUNDS.forEach(r=>renderCountdown('countdown-ko-'+r.id, r.lock, r.label));
   }, 1000);
   // Auto-fetch results every 60 seconds if API key is saved
   startAutoFetch();
@@ -886,13 +993,17 @@ const FIXTURES = {
   'Algeria vs Austria':                          ['28 Jun','12:00 SGT'],
   'Jordan vs Argentina':                         ['28 Jun','12:00 SGT'],
 };
+// Each stage opens 24h before first match, locks 5 mins before first match (SGT)
 const KO_ROUNDS=[
-  {id:'r32',label:'Round of 32',count:16},
-  {id:'r16',label:'Round of 16',count:8},
-  {id:'qf', label:'Quarter-finals',count:4},
-  {id:'sf', label:'Semi-finals',count:2},
-  {id:'f',  label:'Final',count:1},
+  {id:'r32',label:'Round of 32',   count:16, unlock:new Date('2026-06-28T23:55:00+08:00'), lock:new Date('2026-06-29T23:55:00+08:00')},
+  {id:'r16',label:'Round of 16',   count:8,  unlock:new Date('2026-07-02T23:55:00+08:00'), lock:new Date('2026-07-03T23:55:00+08:00')},
+  {id:'qf', label:'Quarter-finals',count:4,  unlock:new Date('2026-07-08T23:55:00+08:00'), lock:new Date('2026-07-09T23:55:00+08:00')},
+  {id:'sf', label:'Semi-finals',   count:2,  unlock:new Date('2026-07-13T23:55:00+08:00'), lock:new Date('2026-07-14T23:55:00+08:00')},
+  {id:'f',  label:'Final',         count:1,  unlock:new Date('2026-07-18T23:55:00+08:00'), lock:new Date('2026-07-19T23:55:00+08:00')},
 ];
+function stageOpen(r){ const n=new Date(); return n>=r.unlock && n<r.lock; }
+function stageLocked(r){ return new Date()>=r.lock; }
+function stageNotYet(r){ return new Date()<r.unlock; }
 const ALL_TEAMS=[...new Set(Object.values(GROUPS).flat())].sort();
 
 function getGroupMatches(){
@@ -906,7 +1017,7 @@ function getGroupMatches(){
 
 // ══════════════════ STATE ══════════════════
 let wallet=null,isAdmin=false,adminWallets=[],username=null;
-let predictions={groups:{},table:{},knockout:{},champion:''};
+let predictions={groups:{},table:{},knockout:{},champion:'',awards:{glove:{player:'',team:''},boot:{player:'',team:''},assist:{player:'',team:''}}};
 let results={};
 let sheetsUrl=localStorage.getItem('orizon_sheets_url')||'https://orizon-sheets-proxy.orizonsg.workers.dev';
 
@@ -984,7 +1095,7 @@ async function onConnected(){
 function showMainApp(){
   document.getElementById('username-modal').style.display='none';
   document.getElementById('tabs').style.display='flex';
-  renderGroups();renderGroupTable();renderKnockout();renderChampion();
+  renderGroups();renderGroupTable();renderKnockout();renderChampion();renderAwards();
   showTab('groups',document.querySelector('.tab'));
   startCountdowns();
 }
@@ -1060,7 +1171,7 @@ function localAll(sheet){
 async function loadPredictions(){
   if(!wallet)return;
   const s=await sheetsGet('predictions',wallet);
-  if(s&&typeof s==='object')predictions={groups:s.groups||{},table:s.table||{},knockout:s.knockout||{},champion:s.champion||''};
+  if(s&&typeof s==='object')predictions={groups:s.groups||{},table:s.table||{},knockout:s.knockout||{},champion:s.champion||'',awards:s.awards||{glove:{player:'',team:''},boot:{player:'',team:''},assist:{player:'',team:''}}};
   const res=await sheetsGet('results','official');
   if(res&&typeof res==='object')results=res;
 }
@@ -1070,17 +1181,6 @@ async function savePredictions(){
   await sheetsSet('users',wallet,{wallet,username:username||'',ts:Date.now()});
   showToast('Predictions saved!');
   updateUserBars();
-}
-let _saveTimer=null;
-function autoSave(){
-  clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(async()=>{
-    if(!wallet)return;
-    await sheetsSet('predictions',wallet,predictions);
-    await sheetsSet('users',wallet,{wallet,username:username||'',ts:Date.now()});
-    showToast('Picks autosaved!');
-    updateUserBars();
-  },1500);
 }
 
 function countPts(p){
@@ -1107,6 +1207,13 @@ function calcScore(p){
   Object.keys(ko).forEach(k=>{if(ko[k]&&results[k]&&results[k]===ko[k])pts+=4;});
   // Champion: 10pts
   if(p.champion&&results.champion&&results.champion===p.champion)pts+=10;
+  // Awards: 5pts each (player name match, case-insensitive)
+  const aw=p.awards||{};
+  ['glove','boot','assist'].forEach(k=>{
+    if(aw[k]&&aw[k].player&&results['award_'+k]){
+      if(aw[k].player.toLowerCase().trim()===results['award_'+k].toLowerCase().trim())pts+=5;
+    }
+  });
   return pts;
 }
 
@@ -1184,7 +1291,7 @@ function renderGroups(){
   if(gsBtn)gsBtn.style.display=picksLocked()?'none':'inline-block';
 }
 function pickGroup(id,val){
-  predictions.groups[id]=val;renderGroups();autoSave();
+  predictions.groups[id]=val;renderGroups();
 }
 
 // ══════════════════ RENDER GROUP TABLE ══════════════════
@@ -1195,25 +1302,59 @@ function renderGroupTable(){
   if(btn)btn.style.display=locked?'none':'inline-block';
   let html='<div class="gt-grid">';
   Object.entries(GROUPS).forEach(([g,teams])=>{
-    const saved=predictions.table[g]||['','','',''];
-    html+=`<div class="gt-card"><div class="card-title">Group ${g}</div>`;
-    ['1st','2nd','3rd','4th'].forEach((pos,i)=>{
-      html+=`<div class="gt-row">
-        <span class="gt-pos">${pos}</span>
-        <select class="gt-select" ${locked?'disabled':''} onchange="updateTable('${g}',${i},this.value)">
-          <option value="">-- Select team --</option>
-          ${teams.map(t=>`<option value="${t}"${saved[i]===t?' selected':''}>${(FLAGS[t]?'':'')}${t}</option>`).join('')}
-        </select>
-      </div>`;
+    const saved=predictions.table[g]&&predictions.table[g].length===4?predictions.table[g]:[...teams];
+    const code=FLAGS[saved[0]]||'';
+    html+=`<div class="gt-card card"><div class="card-title">Group ${g}</div>
+      <ol class="drag-list" id="drag-${g}" data-group="${g}">`;
+    saved.forEach((team,i)=>{
+      const fc=FLAGS[team]||'';
+      const flagImg=fc?`<img class="drag-flag" src="https://flagcdn.com/20x15/${fc}.png" alt=""/>`:'';
+      html+=`<li class="drag-item" draggable="${!locked}" data-team="${team}">
+        <span class="drag-handle${locked?' locked':''}">⠿</span>
+        <span class="drag-pos">${['1st','2nd','3rd','4th'][i]}</span>
+        ${flagImg}<span class="drag-team-name">${shortName(team)}</span>
+      </li>`;
     });
-    html+='</div>';
+    html+=`</ol></div>`;
   });
   html+='</div>';
   document.getElementById('grouptable-content').innerHTML=html;
+  if(!locked){
+    document.querySelectorAll('.drag-list').forEach(list=>initDragDrop(list));
+  }
 }
-function updateTable(grp,pos,val){
-  if(!predictions.table[grp])predictions.table[grp]=['','','',''];
-  predictions.table[grp][pos]=val;autoSave();
+function initDragDrop(list){
+  let dragItem=null;
+  list.querySelectorAll('.drag-item').forEach(item=>{
+    item.addEventListener('dragstart',e=>{
+      dragItem=item;item.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    item.addEventListener('dragend',()=>{
+      item.classList.remove('dragging');dragItem=null;
+      const grp=list.dataset.group;
+      const order=[...list.querySelectorAll('.drag-item')].map(el=>el.dataset.team);
+      predictions.table[grp]=order;
+      list.querySelectorAll('.drag-pos').forEach((p,i)=>{p.textContent=['1st','2nd','3rd','4th'][i];});
+    });
+  });
+  list.addEventListener('dragover',e=>{
+    e.preventDefault();
+    if(!dragItem)return;
+    const after=getDragAfter(list,e.clientY);
+    if(after==null)list.appendChild(dragItem);
+    else list.insertBefore(dragItem,after);
+    list.querySelectorAll('.drag-pos').forEach((p,i)=>{p.textContent=['1st','2nd','3rd','4th'][i];});
+  });
+}
+function getDragAfter(list,y){
+  const items=[...list.querySelectorAll('.drag-item:not(.dragging)')];
+  return items.reduce((closest,child)=>{
+    const box=child.getBoundingClientRect();
+    const offset=y-box.top-box.height/2;
+    if(offset<0&&offset>closest.offset)return{offset,element:child};
+    return closest;
+  },{offset:Number.NEGATIVE_INFINITY}).element;
 }
 
 // ══════════════════ RENDER KNOCKOUT ══════════════════
@@ -1237,7 +1378,7 @@ function renderKnockout(){
     for(let i=0;i<r.count;i++){
       const key=`${r.id}_${i}`;const saved=predictions.knockout[key]||'';
       html+=`<div class="ko-cell"><label>Match ${i+1} — advancing team</label>
-        <select onchange="predictions.knockout['${key}']=this.value;autoSave()">
+        <select onchange="predictions.knockout['${key}']=this.value">
           <option value="">Select team...</option>
           ${ALL_TEAMS.map(t=>`<option value="${t}"${saved===t?' selected':''}>${t}</option>`).join('')}
         </select></div>`;
@@ -1253,7 +1394,7 @@ function renderChampion(){
   const locked=picksLocked();
   sel.innerHTML='<option value="">-- Select a team --</option>'+
     ALL_TEAMS.map(t=>`<option value="${t}"${predictions.champion===t?' selected':''}>${t}</option>`).join('');
-  sel.onchange=()=>{if(!locked){predictions.champion=sel.value;autoSave();}};
+  sel.onchange=()=>{if(!locked){predictions.champion=sel.value;}};
   sel.disabled=locked;
   sel.style.opacity=locked?'0.5':'1';
   const champBtn=document.querySelector('#tab-champion .save-btn');
@@ -1419,6 +1560,32 @@ function renderAdminWallets(){
 }
 
 // ══════════════════ TABS ══════════════════
+function renderAwards(){
+  const locked=picksLocked();
+  document.getElementById('user-bar-awards').innerHTML=userBarHTML();
+  const a=predictions.awards||{};
+  const fields=[
+    {id:'glove',pid:'award-glove-player',tid:'award-glove-team'},
+    {id:'boot', pid:'award-boot-player', tid:'award-boot-team'},
+    {id:'assist',pid:'award-assist-player',tid:'award-assist-team'},
+  ];
+  fields.forEach(f=>{
+    const pp=document.getElementById(f.pid);
+    const pt=document.getElementById(f.tid);
+    if(pp){pp.value=a[f.id]?.player||'';pp.disabled=locked;pp.oninput=()=>{if(!predictions.awards[f.id])predictions.awards[f.id]={};predictions.awards[f.id].player=pp.value;};}
+    if(pt){pt.value=a[f.id]?.team||'';pt.disabled=locked;pt.oninput=()=>{if(!predictions.awards[f.id])predictions.awards[f.id]={};predictions.awards[f.id].team=pt.value;};}
+  });
+  const btn=document.getElementById('awards-save-btn');
+  const hint=document.getElementById('awards-hint');
+  if(btn)btn.style.display=locked?'none':'inline-block';
+  if(hint)hint.style.display=locked?'block':'none';
+  renderCountdown('countdown-awards',PICKS_DEADLINE,'Awards');
+}
+async function saveAwards(){
+  await savePredictions();
+  showToast('Award picks saved!');
+}
+
 function showTab(id,btn){
   document.querySelectorAll('.section').forEach(s=>{s.style.display='none';s.classList.remove('visible');});
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
@@ -1427,6 +1594,7 @@ function showTab(id,btn){
   if(btn)btn.classList.add('active');
   if(id==='leaderboard')renderLeaderboard();
   if(id==='grouptable')renderGroupTable();
+  if(id==='awards')renderAwards();
   if(id==='admin'){
     document.getElementById('sheets-url').value=sheetsUrl;
     if(sheetsUrl){document.getElementById('admin-results').style.display='block';renderAdminMatches();}
