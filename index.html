@@ -1022,14 +1022,12 @@ async function sheetsGet(sheet,key){
 async function sheetsSet(sheet,key,value){
   if(!sheetsUrl){localSet(sheet,key,value);return true;}
   try{
-    // Use GET with URL params — avoids all CORS/redirect issues with Apps Script
-    const params=new URLSearchParams({
-      action:'save',
-      sheet:sheet,
-      key:key,
-      value:JSON.stringify(value)
+    // POST via Cloudflare Worker (handles CORS + large payloads)
+    await fetch(sheetsUrl,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'save',sheet,key,value})
     });
-    await fetch(sheetsUrl+'?'+params.toString(),{mode:'no-cors'});
     return true;
   }catch(e){localSet(sheet,key,value);return false;}
 }
