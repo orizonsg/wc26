@@ -1299,7 +1299,7 @@ async function renderLeaderboard(){
 // ══════════════════ ADMIN ══════════════════
 function saveSheetUrl(){
   const v=document.getElementById('sheets-url').value.trim();
-  if(!v.startsWith('https://script.google.com')){showToast('Invalid URL','err');return;}
+  if(!v.startsWith('https://')){showToast('Please enter a valid URL starting with https://','err');return;}
   sheetsUrl=v;localStorage.setItem('orizon_sheets_url',v);
   document.getElementById('sheets-status').textContent='Connected! Predictions will now sync to Google Sheets.';
   document.getElementById('admin-results').style.display='block';
