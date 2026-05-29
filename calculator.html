@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Orizon SG — $ORI Staking Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:#020a10;--bg2:#08131d;--surface:#0d1a28;--surface2:#0a1520;
+    --teal:#00c8b4;--teal2:#00e5ce;--gold:#ffd060;--red:#ff4466;
+    --text:#e6f4f8;--muted:rgba(230,244,248,0.5);--muted2:rgba(230,244,248,0.25);
+    --font-d:'Orbitron',sans-serif;--font-b:'Exo 2',sans-serif;
+    --r:10px;--r2:16px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scrollbar-width:none;} html::-webkit-scrollbar{display:none;}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:15px;min-height:100vh;
+    background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(0,200,180,0.12) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 100% 80%,rgba(0,80,200,0.08) 0%,transparent 50%);}
+
+  /* HEADER */
+  .header{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;
+    background:rgba(8,19,29,0.9);border-bottom:1px solid rgba(0,200,180,0.12);
+    backdrop-filter:blur(12px);position:sticky;top:0;z-index:10;}
+  .brand-name{font-family:var(--font-d);font-size:13px;font-weight:700;letter-spacing:.16em;color:var(--teal2);text-transform:uppercase;}
+  .brand-sub{font-size:11px;color:var(--muted2);letter-spacing:.08em;}
+  .price-badge{display:flex;align-items:center;gap:10px;background:rgba(0,200,180,0.07);
+    border:1px solid rgba(0,200,180,0.2);border-radius:40px;padding:7px 18px;cursor:pointer;}
+  .price-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 8px var(--teal);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .price-label{font-size:10px;color:var(--muted2);}
+  .price-value{font-family:var(--font-d);font-size:13px;color:var(--teal2);letter-spacing:.06em;font-weight:700;}
+
+  /* MAIN */
+  .main{max-width:860px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
+  .hero{text-align:center;margin-bottom:2.5rem;}
+  .hero-eye{font-size:11px;letter-spacing:.22em;color:rgba(0,200,180,0.7);text-transform:uppercase;font-weight:500;margin-bottom:10px;}
+  .hero-title{font-family:var(--font-d);font-size:30px;font-weight:900;line-height:1.1;color:#fff;margin-bottom:8px;}
+  .hero-title span{color:var(--teal2);}
+  .hero-desc{font-size:14px;color:var(--muted);font-weight:300;line-height:1.7;}
+
+  /* CARD */
+  .card{background:var(--surface);border:1px solid rgba(0,200,180,0.12);border-radius:var(--r2);padding:1.75rem;margin-bottom:1.25rem;}
+  .sec-title{font-family:var(--font-d);font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--teal);
+    text-transform:uppercase;margin-bottom:1.25rem;padding-bottom:10px;
+    border-bottom:1px solid rgba(0,200,180,0.1);display:flex;align-items:center;gap:8px;}
+  .sec-title::before{content:'';display:inline-block;width:3px;height:14px;background:var(--teal);border-radius:2px;}
+
+  /* INPUTS */
+  .inputs-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  @media(max-width:580px){.inputs-grid{grid-template-columns:1fr;}}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;font-weight:500;}
+  .field-wrap{position:relative;}
+  .field input{width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.15);
+    color:var(--text);border-radius:var(--r);padding:11px 56px 11px 14px;
+    font-family:var(--font-b);font-size:15px;font-weight:500;transition:border-color .2s,box-shadow .2s;}
+  .field input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,200,180,0.1);}
+  .field-unit{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    font-size:10px;font-weight:700;color:var(--teal);letter-spacing:.06em;font-family:var(--font-d);}
+  .field-hint{font-size:11px;color:var(--muted2);font-weight:300;line-height:1.5;}
+
+  /* PRESETS */
+  .presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem;}
+  .preset{padding:5px 14px;border-radius:40px;font-size:11px;font-weight:600;letter-spacing:.06em;
+    cursor:pointer;transition:all .2s;border:1px solid rgba(0,200,180,0.2);
+    background:rgba(0,200,180,0.06);color:var(--muted);font-family:var(--font-b);}
+  .preset:hover,.preset.on{background:rgba(0,200,180,0.15);border-color:var(--teal);color:var(--teal2);}
+
+  /* CALC BTN */
+  .calc-btn{width:100%;padding:14px;border-radius:var(--r);
+    background:linear-gradient(135deg,var(--teal),#00a896);border:none;
+    color:#000;font-family:var(--font-d);font-size:13px;font-weight:700;
+    letter-spacing:.12em;text-transform:uppercase;cursor:pointer;margin-top:1.25rem;
+    transition:all .2s;position:relative;overflow:hidden;}
+  .calc-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,200,180,0.3);}
+  .calc-btn::after{content:'';position:absolute;top:-50%;left:-60%;width:40%;height:200%;
+    background:rgba(255,255,255,0.2);transform:skewX(-20deg);
+    animation:shine 3s ease-in-out infinite 1s;}
+  @keyframes shine{0%{left:-60%;}40%,100%{left:130%;}}
+
+  /* RESULT ROWS */
+  .res-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:1.75rem;}
+  .res-row{
+    display:grid;grid-template-columns:160px 1fr 1fr;
+    align-items:center;gap:1rem;
+    background:var(--surface2);border-radius:var(--r);
+    padding:1rem 1.25rem;
+    border:1px solid rgba(0,200,180,0.08);
+    border-left:3px solid rgba(0,200,180,0.4);
+    transition:border-color .3s;
+  }
+  @media(max-width:580px){.res-row{grid-template-columns:1fr;gap:4px;}}
+  .res-row.lit{border-color:rgba(0,200,180,0.2);border-left-color:var(--teal);}
+  .res-row.gold{border-left-color:rgba(255,208,96,0.5);}
+  .res-row.gold.lit{border-color:rgba(255,208,96,0.2);border-left-color:var(--gold);}
+  .res-row-left{display:flex;align-items:center;gap:10px;}
+  .res-icon{font-size:22px;flex-shrink:0;}
+  .res-lbl{font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;font-weight:500;}
+  .res-row-mid{font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--teal2);white-space:nowrap;}
+  .res-row-right{font-size:13px;color:var(--muted);font-weight:300;white-space:nowrap;}
+  .gold-text{color:var(--gold) !important;}
+  .res-ph{font-size:12px;color:var(--muted2);}
+
+  /* TABLE */
+  .proj-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;font-family:var(--font-b);}
+  th{text-align:left;padding:10px 12px;font-size:9px;letter-spacing:.14em;
+    color:var(--muted2);text-transform:uppercase;font-weight:600;
+    font-family:var(--font-b);
+    border-bottom:1px solid rgba(255,255,255,0.06);}
+  td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);
+    font-weight:300;font-family:var(--font-b);color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(0,200,180,0.025);}
+  .hi{font-family:var(--font-b);font-size:13px;color:var(--teal2);font-weight:500;}
+  .gd{font-family:var(--font-b);font-size:13px;color:var(--gold);font-weight:500;}
+  .row-final td{background:rgba(0,200,180,0.06);color:var(--text);font-weight:500;}
+
+  /* STAKING BUTTON */
+  .stake-wrap{text-align:center;margin-top:1.75rem;}
+  .stake-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 32px;
+    border-radius:40px;background:linear-gradient(135deg,rgba(255,208,96,0.15),rgba(255,150,0,0.1));
+    border:1px solid rgba(255,208,96,0.4);color:var(--gold);font-family:var(--font-d);
+    font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    cursor:pointer;transition:all .2s;}
+  .stake-btn:hover{background:linear-gradient(135deg,rgba(255,208,96,0.25),rgba(255,150,0,0.2));
+    box-shadow:0 4px 20px rgba(255,208,96,0.2);transform:translateY(-1px);}
+  .stake-sub{margin-top:8px;font-size:11px;color:var(--muted2);}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);
+    display:flex;align-items:center;justify-content:center;z-index:100;display:none;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid rgba(0,200,180,0.2);
+    border-radius:var(--r2);padding:2rem;max-width:420px;width:90%;text-align:center;}
+  .modal-title{font-family:var(--font-d);font-size:16px;color:var(--teal2);letter-spacing:.06em;margin-bottom:8px;}
+  .modal-desc{font-size:13px;color:var(--muted);font-weight:300;line-height:1.7;margin-bottom:1.25rem;}
+  .modal-link{background:var(--surface2);border:1px solid rgba(0,200,180,0.2);border-radius:var(--r);
+    padding:10px 14px;font-size:12px;color:var(--teal);word-break:break-all;
+    font-family:monospace;margin-bottom:1rem;display:block;}
+  .modal-steps{text-align:left;font-size:12px;color:var(--muted);font-weight:300;line-height:1.9;margin-bottom:1.25rem;}
+  .modal-steps strong{color:var(--text);font-weight:500;}
+  .modal-copy{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:40px;
+    background:rgba(0,200,180,0.1);border:1px solid rgba(0,200,180,0.3);color:var(--teal2);
+    font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;margin-right:8px;}
+  .modal-close{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:40px;
+    background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted);
+    font-family:var(--font-b);font-size:13px;cursor:pointer;}
+
+  /* DISCLAIMER */
+  .disc{margin-top:1.5rem;padding:12px 16px;background:rgba(255,208,96,0.04);
+    border:1px solid rgba(255,208,96,0.12);border-radius:var(--r);
+    font-size:11px;color:rgba(255,208,96,0.6);font-weight:300;line-height:1.7;}
+  .footer{text-align:center;padding:1.5rem;font-size:11px;color:var(--muted2);}
+  .footer a{color:var(--teal);text-decoration:none;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div>
+    <div class="brand-name">Orizon SG</div>
+    <div class="brand-sub">$ORI Staking Calculator</div>
+  </div>
+  <div class="price-badge" onclick="refreshPrice()" title="Click to refresh price">
+    <div class="price-dot"></div>
+    <div>
+      <div class="price-label">$ORI Live Price</div>
+      <div class="price-value" id="hdr-price">Fetching...</div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <!-- HERO -->
+  <div id="local-notice" style="display:none;background:rgba(255,208,96,0.07);border:1px solid rgba(255,208,96,0.2);border-radius:var(--r);padding:10px 16px;margin-bottom:1.25rem;font-size:12px;color:rgba(255,208,96,0.8);text-align:center;font-weight:300;">
+    📁 Running from local file — live $ORI price requires hosting on GitHub Pages. Enter price manually below, or upload to <strong>orizonsg.github.io/calculator</strong> for full functionality.
+  </div>
+  <div class="hero">
+    <div class="hero-eye">Fixed Stake · Compound Calculator</div>
+    <div class="hero-title">Project your <span>$ORI</span> returns</div>
+    <div class="hero-desc">Enter your current balances and reward yield to see<br>estimated returns in $ORI, USD, and SGD.</div>
+  </div>
+
+  <!-- INPUT CARD -->
+  <div class="card">
+    <div class="sec-title">Your Stake Details</div>
+    <div class="inputs-grid" style="margin-bottom:1.5rem;">
+      <div class="field">
+        <label>Stake Balance</label>
+        <div class="field-wrap">
+          <input type="number" id="stake" min="0" step="any" placeholder="0.0000"/>
+          <span class="field-unit">sORI</span>
+        </div>
+        <span class="field-hint">Your current fixed stake balance from orizon.vip</span>
+      </div>
+      <div class="field">
+        <label>Interest Balance</label>
+        <div class="field-wrap">
+          <input type="number" id="interest" min="0" step="any" placeholder="0.0000"/>
+          <span class="field-unit">sORI</span>
+        </div>
+        <span class="field-hint">Accumulated interest balance</span>
+      </div>
+      <div class="field">
+        <label>Reward Yield (per rebase)</label>
+        <div class="field-wrap">
+          <input type="number" id="yld" min="0" step="any" placeholder="0.1019"/>
+          <span class="field-unit">%</span>
+        </div>
+        <span class="field-hint">Shown on orizon.vip Fixed Stake page — e.g. 0.1019 for 360D</span>
+      </div>
+      <div class="field">
+        <label>$ORI Price (USD) <span style="font-size:10px;color:var(--teal);font-weight:400;">live</span></label>
+        <div class="field-wrap">
+          <input type="number" id="price" min="0" step="any" placeholder="Loading..."/>
+          <span class="field-unit">USD</span>
+        </div>
+        <span class="field-hint">Auto-fetched · editable if needed</span>
+      </div>
+    </div>
+
+    <div class="sec-title">Projection Period</div>
+    <div class="presets" id="presets">
+      <button class="preset" onclick="setD(30,this)">30 days</button>
+      <button class="preset" onclick="setD(60,this)">60 days</button>
+      <button class="preset on" onclick="setD(90,this)">90 days</button>
+      <button class="preset" onclick="setD(180,this)">180 days</button>
+      <button class="preset" onclick="setD(360,this)">360 days</button>
+    </div>
+    <div class="inputs-grid">
+      <div class="field">
+        <label>Number of Days</label>
+        <div class="field-wrap">
+          <input type="number" id="days" min="1" max="1000" step="1" value="90"/>
+          <span class="field-unit">days</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Rebase interval</label>
+        <div class="field-wrap">
+          <input type="text" value="3h 36min (fixed)" disabled
+            style="opacity:.5;cursor:not-allowed;background:var(--surface2);
+            border:1px solid rgba(255,255,255,0.08);color:var(--muted);
+            border-radius:var(--r);padding:11px 14px;font-family:var(--font-b);font-size:14px;width:100%;"/>
+        </div>
+        <span class="field-hint">6.667 rebases per day</span>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">⚡ Calculate My Returns</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="card">
+    <div class="sec-title">Projected Returns</div>
+    <div class="res-rows" id="res-rows">
+      <div class="res-row" id="c-ori">
+        <div class="res-row-left">
+          <span class="res-icon">🪙</span>
+          <span class="res-lbl">$ORI Earned</span>
+        </div>
+        <div class="res-row-mid" id="g-ori">—</div>
+        <div class="res-row-right" id="t-ori"><span class="res-ph" id="p-ori">Enter your details and calculate</span></div>
+      </div>
+      <div class="res-row" id="c-usd">
+        <div class="res-row-left">
+          <span class="res-icon">💵</span>
+          <span class="res-lbl">USD Value</span>
+        </div>
+        <div class="res-row-mid" id="g-usd">—</div>
+        <div class="res-row-right" id="t-usd"><span class="res-ph" id="p-usd">Requires $ORI price</span></div>
+      </div>
+      <div class="res-row gold" id="c-sgd">
+        <div class="res-row-left">
+          <span class="res-icon">💰</span>
+          <span class="res-lbl">SGD Value</span>
+        </div>
+        <div class="res-row-mid gold-text" id="g-sgd">—</div>
+        <div class="res-row-right gold-text" id="t-sgd"><span class="res-ph" id="p-sgd">Requires $ORI price</span></div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="sec-title">Milestone Breakdown</div>
+    <div class="proj-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Total sORI</th>
+            <th>Interest Gained</th>
+            <th>Value (USD)</th>
+            <th>Value (SGD)</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="5" style="text-align:center;color:var(--muted2);padding:1.5rem;">Hit Calculate to see your milestones</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- START STAKING BUTTON -->
+    <div class="stake-wrap">
+      <button class="stake-btn" onclick="openStakeModal()">
+        🚀 Start Staking on Orizon
+      </button>
+      <div class="stake-sub">Join via Orizon SG — opens in your Web3 wallet</div>
+    </div>
+  </div>
+
+  <div class="disc">⚠ Estimates only. Returns assume constant yield and $ORI price — both fluctuate. Rebasing protocols carry risk. This is not financial advice. Always verify current rates on orizon.vip before investing.</div>
+</main>
+
+<footer class="footer">
+  Orizon SG · <a href="https://orizon.vip" target="_blank">orizon.vip</a> · Calculator by Orizon SG community
+</footer>
+
+<!-- STAKE MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">🚀 Start Staking on Orizon</div>
+    <div class="modal-desc">The Orizon app requires a Web3 wallet. Open the link below inside your wallet's DApp browser.</div>
+    <div class="modal-link" id="ref-link">https://orizon.vip</div>
+    <div class="modal-steps">
+      <strong>On mobile:</strong><br>
+      1. Open <strong>TokenPocket</strong> or <strong>Trust Wallet</strong><br>
+      2. Tap <strong>Discover</strong> or <strong>DApp Browser</strong><br>
+      3. Paste the link above and go<br><br>
+      <strong>On desktop:</strong><br>
+      Open the link with your <strong>MetaMask</strong> or Web3 browser extension active.
+    </div>
+    <div>
+      <button class="modal-copy" onclick="copyLink()">📋 Copy Link</button>
+      <button class="modal-close" onclick="document.getElementById('modal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const REBASE_HRS   = 3.6;        // 3h 36min fixed
+const REBASES_DAY  = 24 / REBASE_HRS; // 6.667
+const ORI_CONTRACT = '0xda033999bb6165e64db01bd9be14b40f5653092e';
+// ⬇ Replace with your actual Orizon referral link
+const REFERRAL_LINK = 'https://orizon.vip/invite?code=0x676cF22d99CC6B5237E1ed7942F93b94A89267CE';
+
+let oriUSD = null, sgdRate = 1.35;
+
+// ── PRICE FETCH ──
+async function fetchPrice() {
+  // Source 1: DeFiLlama — free, no auth, CORS-friendly
+  try {
+    const r = await fetch(
+      `https://coins.llama.fi/prices/current/bsc:${ORI_CONTRACT}?searchWidth=4h`
+    );
+    const d = await r.json();
+    const coin = d.coins?.[`bsc:${ORI_CONTRACT}`];
+    if (coin?.price) {
+      oriUSD = coin.price;
+      setPrice(oriUSD);
+      return;
+    }
+  } catch(e) {}
+
+  // Source 2: DexScreener
+  try {
+    const r = await fetch(
+      `https://api.dexscreener.com/latest/dex/tokens/${ORI_CONTRACT}`
+    );
+    const d = await r.json();
+    const pairs = (d.pairs||[]).sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0));
+    if (pairs[0]?.priceUsd) {
+      oriUSD = parseFloat(pairs[0].priceUsd);
+      setPrice(oriUSD);
+      return;
+    }
+  } catch(e) {}
+
+  // Source 3: CoinGecko
+  try {
+    const r2 = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=orizon&vs_currencies=usd,sgd'
+    );
+    const d2 = await r2.json();
+    if (d2.orizon?.usd) {
+      oriUSD = d2.orizon.usd;
+      if (d2.orizon.sgd) sgdRate = d2.orizon.sgd / oriUSD;
+      setPrice(oriUSD);
+      return;
+    }
+  } catch(e) {}
+
+  // Local file CORS blocks price APIs — works fine on GitHub Pages
+  const isLocal = location.protocol === 'file:';
+  if (isLocal) {
+    document.getElementById('hdr-price').textContent = 'Upload to GitHub to get live price';
+    document.getElementById('price').placeholder = 'Enter $ORI price manually';
+  } else {
+    document.getElementById('hdr-price').textContent = 'Price unavailable — enter below';
+  }
+  document.getElementById('price').style.borderColor = 'var(--gold)';
+  document.getElementById('price').placeholder = 'Enter $ORI price manually';
+}
+
+function setPrice(p) {
+  document.getElementById('hdr-price').textContent = '$' + p.toFixed(2) + ' USD';
+  document.getElementById('price').value = p.toFixed(2);
+}
+
+async function fetchSGDRate() {
+  try {
+    const r = await fetch('https://open.er-api.com/v6/latest/USD');
+    const d = await r.json();
+    if (d.rates?.SGD) sgdRate = d.rates.SGD;
+  } catch(e) {}
+}
+
+function refreshPrice() {
+  document.getElementById('hdr-price').textContent = 'Refreshing...';
+  fetchPrice();
+}
+
+// ── HELPERS ──
+function setD(n, btn) {
+  document.getElementById('days').value = n;
+  document.querySelectorAll('.preset').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function fmt(n) {
+  if (n >= 1e9)  return (n/1e9).toFixed(3)  + 'B';
+  if (n >= 1e6)  return (n/1e6).toFixed(3)  + 'M';
+  if (n >= 1000) return n.toLocaleString('en-SG', {minimumFractionDigits:2,maximumFractionDigits:4});
+  return n.toFixed(4);
+}
+function fmtC(n, sym) {
+  if (n >= 1e6)  return sym + (n/1e6).toFixed(2)   + 'M';
+  if (n >= 1000) return sym + n.toLocaleString('en-SG', {minimumFractionDigits:2,maximumFractionDigits:2});
+  return sym + n.toFixed(2);
+}
+
+// ── CALCULATE ──
+function calculate() {
+  const stake  = parseFloat(document.getElementById('stake').value)    || 0;
+  const inter  = parseFloat(document.getElementById('interest').value) || 0;
+  const yld    = parseFloat(document.getElementById('yld').value)      || 0.1019;
+  const days   = parseInt(document.getElementById('days').value)       || 90;
+  const price  = parseFloat(document.getElementById('price').value)    || oriUSD || 55;
+
+  if (stake <= 0 && inter <= 0) { alert('Please enter your stake or interest balance.'); return; }
+
+  const init    = stake + inter;
+  const rate    = yld / 100;
+  const totalR  = days * REBASES_DAY;
+  const future  = init * Math.pow(1 + rate, totalR);
+  const gainORI = future - init;
+  const sgd     = sgdRate || 1.35;
+  const gainUSD = gainORI * price;
+  const gainSGD = gainUSD * sgd;
+  const totUSD  = future  * price;
+  const totSGD  = totUSD  * sgd;
+
+  // Result rows
+  ['ori','usd','sgd'].forEach(k=>{
+    const ph=document.getElementById('p-'+k);
+    if(ph)ph.style.display='none';
+    document.getElementById('c-'+k).classList.add('lit');
+  });
+  document.getElementById('g-ori').textContent = '+' + fmt(gainORI) + ' sORI';
+  document.getElementById('t-ori').textContent = 'Total: ' + fmt(future) + ' sORI';
+  document.getElementById('g-usd').textContent = '+' + fmtC(gainUSD,'$');
+  document.getElementById('t-usd').textContent = 'Total: ' + fmtC(totUSD,'$');
+  document.getElementById('g-sgd').textContent = '+' + fmtC(gainSGD,'S$');
+  document.getElementById('t-sgd').textContent = 'Total: ' + fmtC(totSGD,'S$');
+
+  // Table milestones
+  const ms = [1,7,30,60,90,180,360].filter(d => d < days);
+  ms.push(days);
+  const rows = ms.map(d => {
+    const r  = d * REBASES_DAY;
+    const ft = init * Math.pow(1 + rate, r);
+    const g  = ft - init;
+    const isFinal = d === days;
+    const cls = isFinal ? 'class="row-final"' : '';
+    return `<tr ${cls}>
+      <td style="font-weight:${isFinal?600:400};color:${isFinal?'var(--teal2)':'var(--text)'}">
+        ${d === days && !([1,7,30,60,90,180,360].includes(d)) ? d+' Days ★' : d+' Day'+(d>1?'s':'')}
+      </td>
+      <td class="${isFinal?'hi':''}">${fmt(ft)} sORI</td>
+      <td style="color:rgba(0,200,180,0.8)">+${fmt(g)} sORI</td>
+      <td class="${isFinal?'hi':''}">$${fmt(ft*price)}</td>
+      <td class="${isFinal?'gd':''}">S$${fmt(ft*price*sgd)}</td>
+    </tr>`;
+  });
+  document.getElementById('tbody').innerHTML = rows.join('');
+}
+
+// ── STAKING MODAL ──
+function openStakeModal() {
+  document.getElementById('ref-link').textContent = REFERRAL_LINK;
+  // If already in a DApp browser, navigate directly
+  if (window.ethereum) {
+    window.open(REFERRAL_LINK, '_blank');
+    return;
+  }
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(e) {
+  if (e.target.id === 'modal') document.getElementById('modal').classList.remove('open');
+}
+function copyLink() {
+  navigator.clipboard.writeText(REFERRAL_LINK).then(() => {
+    const btn = document.querySelector('.modal-copy');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy Link', 2000);
+  });
+}
+
+// ── INIT ──
+if (location.protocol === 'file:') {
+  document.getElementById('local-notice').style.display = 'block';
+}
+fetchSGDRate();
+fetchPrice();
+setInterval(fetchPrice, 300000); // refresh every 5 min
+document.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+</script>
+</body>
+</html>
