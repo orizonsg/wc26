@@ -250,7 +250,7 @@ body::-webkit-scrollbar{display:none;}
 .ko-cell select:hover{border-color:rgba(0,200,180,0.3);}
 
 /* ─── CHAMPION ─── */
-.champ-card{max-width:440px;}
+.champ-card{max-width:480px;margin:0 auto;}
 .champ-select{
   width:100%;background:var(--surface2);
   border:1px solid rgba(0,200,180,0.2);
@@ -538,6 +538,7 @@ body::-webkit-scrollbar{display:none;}
       <div id="countdown-champion"></div>
     </div>
     <div id="user-bar-champion"></div>
+    <div style="display:flex;justify-content:center;">
     <div class="card champ-card">
       <div class="card-title">Your champion pick</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300;">Select the team you believe will win the FIFA World Cup 2026.</p>
@@ -561,19 +562,16 @@ body::-webkit-scrollbar{display:none;}
         <div class="card-title">🥅 Golden Glove</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300;">Best goalkeeper of the tournament</p>
         <input class="awards-input" id="award-glove-player" type="text" maxlength="40" placeholder="Player name"/>
-        <input class="awards-input" id="award-glove-team" type="text" maxlength="40" placeholder="Country / Team" style="margin-top:8px;"/>
       </div>
       <div class="card awards-card">
         <div class="card-title">👟 Golden Boot</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300;">Top scorer of the tournament</p>
         <input class="awards-input" id="award-boot-player" type="text" maxlength="40" placeholder="Player name"/>
-        <input class="awards-input" id="award-boot-team" type="text" maxlength="40" placeholder="Country / Team" style="margin-top:8px;"/>
       </div>
       <div class="card awards-card">
         <div class="card-title">🎯 Top Assister</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300;">Most assists of the tournament</p>
         <input class="awards-input" id="award-assist-player" type="text" maxlength="40" placeholder="Player name"/>
-        <input class="awards-input" id="award-assist-team" type="text" maxlength="40" placeholder="Country / Team" style="margin-top:8px;"/>
       </div>
     </div>
     <button class="save-pill" onclick="saveAwards()" id="awards-save-btn" style="margin-top:1.25rem;">Save award picks</button>
@@ -602,49 +600,70 @@ body::-webkit-scrollbar{display:none;}
         <div class="score-icon">⚽</div>
         <div class="score-pts">2 pts</div>
         <div class="score-label">Group Stage</div>
-        <div class="score-desc">Per correctly predicted match result (win, draw, or loss)</div>
+        <div class="score-desc">Per correct match result · 48 matches · max 96 pts</div>
       </div>
       <div class="score-card">
         <div class="score-icon">📊</div>
-        <div class="score-pts">1 pt</div>
+        <div class="score-pts">3 / 2 pts</div>
         <div class="score-label">Group Table</div>
-        <div class="score-desc">Per team placed in the correct final position within the group</div>
+        <div class="score-desc">3 pts for correct 1st place · 2 pts for 2nd–4th · max 108 pts</div>
       </div>
       <div class="score-card">
-        <div class="score-icon">🏆</div>
+        <div class="score-icon">⚔️</div>
         <div class="score-pts">4 pts</div>
-        <div class="score-label">Knockout Stage</div>
-        <div class="score-desc">Per correctly predicted team advancing in each knockout round</div>
-      </div>
-      <div class="score-card highlight">
-        <div class="score-icon">👑</div>
-        <div class="score-pts">10 pts</div>
-        <div class="score-label">Champion</div>
-        <div class="score-desc">For correctly predicting the World Cup 2026 winner</div>
-      </div>
-      <div class="score-card">
-        <div class="score-icon">🥅</div>
-        <div class="score-pts">5 pts</div>
-        <div class="score-label">Golden Glove</div>
-        <div class="score-desc">For correctly predicting the best goalkeeper of the tournament</div>
-      </div>
-      <div class="score-card">
-        <div class="score-icon">👟</div>
-        <div class="score-pts">5 pts</div>
-        <div class="score-label">Golden Boot</div>
-        <div class="score-desc">For correctly predicting the top scorer of the tournament</div>
+        <div class="score-label">Round of 32</div>
+        <div class="score-desc">Per advancing team · 16 picks · max 64 pts</div>
       </div>
       <div class="score-card">
         <div class="score-icon">🎯</div>
+        <div class="score-pts">6 pts</div>
+        <div class="score-label">Round of 16</div>
+        <div class="score-desc">Per advancing team · 8 picks · max 48 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">🔥</div>
+        <div class="score-pts">8 pts</div>
+        <div class="score-label">Quarter & Semi-Finals</div>
+        <div class="score-desc">Per advancing team · QF 4 picks · SF 2 picks · max 48 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">🥉</div>
+        <div class="score-pts">4 pts</div>
+        <div class="score-label">3rd Place Match</div>
+        <div class="score-desc">Correct 3rd place team · max 4 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">🏆</div>
+        <div class="score-pts">10 pts</div>
+        <div class="score-label">Final</div>
+        <div class="score-desc">Correct finalist winner · max 10 pts</div>
+      </div>
+      <div class="score-card highlight">
+        <div class="score-icon">👑</div>
+        <div class="score-pts">25 pts</div>
+        <div class="score-label">Champion</div>
+        <div class="score-desc">Correct World Cup 2026 winner · max 25 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">🎖️</div>
         <div class="score-pts">5 pts</div>
-        <div class="score-label">Top Assister</div>
-        <div class="score-desc">For correctly predicting the player with the most assists</div>
+        <div class="score-label">Awards (×3)</div>
+        <div class="score-desc">Golden Glove · Golden Boot · Top Assister · max 15 pts</div>
       </div>
     </div>
     <div class="card" style="margin-top:1.5rem;max-width:560px;">
+      <div class="card-title">Maximum Points Breakdown</div>
+      <div class="deadline-item"><span class="dl-label">Group Stage (48 × 2)</span><span class="dl-date">96 pts · 23%</span></div>
+      <div class="deadline-item"><span class="dl-label">Group Table (subtotal)</span><span class="dl-date">108 pts · 25.8%</span></div>
+      <div class="deadline-item"><span class="dl-label">Knockout Stage (subtotal)</span><span class="dl-date">174 pts · 41.6%</span></div>
+      <div class="deadline-item"><span class="dl-label">Champion (1 × 25)</span><span class="dl-date">25 pts · 6%</span></div>
+      <div class="deadline-item"><span class="dl-label">Awards (3 × 5)</span><span class="dl-date">15 pts · 3.6%</span></div>
+      <div class="deadline-item" style="border-top:1px solid rgba(0,200,180,0.2);margin-top:4px;padding-top:12px;"><span class="dl-label" style="font-weight:600;color:var(--text);">Total Maximum</span><span class="dl-date" style="color:var(--teal2);font-size:13px;">418 pts</span></div>
+    </div>
+    <div class="card" style="margin-top:1.5rem;max-width:560px;">
       <div class="card-title">Deadlines</div>
-      <div class="deadline-item"><span class="dl-label">Group Stage, Group Table & Champion picks</span> <span class="dl-date">12 Jun · 02:55 SGT</span></div>
-      <div class="deadline-item"><span class="dl-label">Knockout Stage</span> <span class="dl-date">Opens per round — see Knockout tab</span></div>
+      <div class="deadline-item"><span class="dl-label">Group Stage, Group Table & Champion picks</span><span class="dl-date">12 Jun · 02:55 SGT</span></div>
+      <div class="deadline-item"><span class="dl-label">Knockout Stage predictions</span><span class="dl-date">Opens per round</span></div>
     </div>
   </div>
 
@@ -654,10 +673,77 @@ body::-webkit-scrollbar{display:none;}
       <div class="s-title">Prizes <span class="accent">&amp; Rewards</span></div>
       <div class="s-desc">Stay tuned — prizes will be announced soon.</div>
     </div>
-    <div class="prizes-coming">
-      <div class="prizes-icon">🎁</div>
-      <div class="prizes-title">Coming soon</div>
-      <div class="prizes-desc">The Orizon SG community prize pool is being finalised.<br>Check back here for updates closer to the tournament!</div>
+    <div style="max-width:660px;">
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title" style="margin-bottom:1rem;">Prize Pool</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:var(--font-b);">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(0,200,180,0.2);">
+              <th style="text-align:left;padding:8px 10px;font-size:9px;letter-spacing:.12em;color:var(--muted2);text-transform:uppercase;font-weight:600;">Round</th>
+              <th style="text-align:center;padding:8px 10px;font-size:9px;letter-spacing:.12em;color:var(--muted2);text-transform:uppercase;font-weight:600;">Winners</th>
+              <th style="text-align:right;padding:8px 10px;font-size:9px;letter-spacing:.12em;color:var(--teal);text-transform:uppercase;font-weight:600;">$ORI</th>
+              <th style="text-align:right;padding:8px 10px;font-size:9px;letter-spacing:.12em;color:var(--gold);text-transform:uppercase;font-weight:600;">Cash</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(0,200,180,0.03);">
+              <td style="padding:10px 10px;color:var(--text);font-weight:400;">🏁 Signup reward <span style="font-size:10px;color:var(--muted2);">(first 50)</span></td>
+              <td style="padding:10px;text-align:center;color:var(--muted);">50</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:var(--teal2);font-weight:700;">9.44 $ORI</td>
+              <td style="padding:10px;text-align:right;color:var(--muted2);">—</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+              <td style="padding:10px 10px;color:var(--text);font-weight:400;">🎰 Lucky Draw <span style="font-size:10px;color:var(--muted2);">(5 rounds × 3)</span></td>
+              <td style="padding:10px;text-align:center;color:var(--muted);">15</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:var(--teal2);font-weight:700;">2.832 $ORI</td>
+              <td style="padding:10px;text-align:right;color:var(--muted2);">—</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(255,208,96,0.04);">
+              <td style="padding:10px 10px;font-weight:600;color:var(--text);">🥇 Final — 1st Place</td>
+              <td style="padding:10px;text-align:center;color:var(--muted);">1</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:var(--teal2);font-weight:700;">3 $ORI</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:var(--gold);font-weight:700;">$388</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(255,208,96,0.02);">
+              <td style="padding:10px 10px;font-weight:600;color:var(--text);">🥈 Final — 2nd Place</td>
+              <td style="padding:10px;text-align:center;color:var(--muted);">1</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:var(--teal2);font-weight:700;">2 $ORI</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:var(--gold);font-weight:700;">$188</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+              <td style="padding:10px 10px;font-weight:600;color:var(--text);">🥉 Final — 3rd Place</td>
+              <td style="padding:10px;text-align:center;color:var(--muted);">1</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:var(--teal2);font-weight:700;">1 $ORI</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:var(--gold);font-weight:700;">$88</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(168,85,247,0.04);">
+              <td style="padding:10px 10px;color:var(--text);font-weight:400;">⭐ Top Recruiter 1st <span style="font-size:10px;color:var(--muted2);">(SG only)</span></td>
+              <td style="padding:10px;text-align:center;color:var(--muted);">1</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:#c084fc;font-weight:700;">3 $ORI</td>
+              <td style="padding:10px;text-align:right;color:var(--muted2);">—</td>
+            </tr>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(168,85,247,0.02);">
+              <td style="padding:10px 10px;color:var(--text);font-weight:400;">⭐ Top Recruiter 2nd <span style="font-size:10px;color:var(--muted2);">(SG only)</span></td>
+              <td style="padding:10px;text-align:center;color:var(--muted);">1</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:#c084fc;font-weight:700;">2 $ORI</td>
+              <td style="padding:10px;text-align:right;color:var(--muted2);">—</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 10px;color:var(--text);font-weight:400;">⭐ Top Recruiter 3rd <span style="font-size:10px;color:var(--muted2);">(SG only)</span></td>
+              <td style="padding:10px;text-align:center;color:var(--muted);">1</td>
+              <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:#c084fc;font-weight:700;">1 $ORI</td>
+              <td style="padding:10px;text-align:right;color:var(--muted2);">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card" style="font-size:12px;color:var(--muted);font-weight:300;line-height:1.8;">
+        <div class="card-title" style="margin-bottom:10px;">Notes</div>
+        <p style="margin-bottom:6px;">💰 Cash prizes are in SGD. $ORI prizes are in $ORI tokens at the prevailing market rate.</p>
+        <p style="margin-bottom:6px;">🏁 Signup reward is given to the first 50 participants who complete registration and make at least one prediction.</p>
+        <p style="margin-bottom:6px;">🎰 Lucky draws are held across 5 rounds throughout the tournament — 3 winners per round.</p>
+        <p>⭐ Recruiter prizes are for Orizon SG community members only. Tracked via Orizon referral system.</p>
+      </div>
     </div>
   </div>
 
@@ -995,11 +1081,12 @@ const FIXTURES = {
 };
 // Each stage opens 24h before first match, locks 5 mins before first match (SGT)
 const KO_ROUNDS=[
-  {id:'r32',label:'Round of 32',   count:16, unlock:new Date('2026-06-28T23:55:00+08:00'), lock:new Date('2026-06-29T23:55:00+08:00')},
-  {id:'r16',label:'Round of 16',   count:8,  unlock:new Date('2026-07-02T23:55:00+08:00'), lock:new Date('2026-07-03T23:55:00+08:00')},
-  {id:'qf', label:'Quarter-finals',count:4,  unlock:new Date('2026-07-08T23:55:00+08:00'), lock:new Date('2026-07-09T23:55:00+08:00')},
-  {id:'sf', label:'Semi-finals',   count:2,  unlock:new Date('2026-07-13T23:55:00+08:00'), lock:new Date('2026-07-14T23:55:00+08:00')},
-  {id:'f',  label:'Final',         count:1,  unlock:new Date('2026-07-18T23:55:00+08:00'), lock:new Date('2026-07-19T23:55:00+08:00')},
+  {id:'r32',label:'Round of 32',   count:16, pts:4,  unlock:new Date('2026-06-28T23:55:00+08:00'), lock:new Date('2026-06-29T23:55:00+08:00')},
+  {id:'r16',label:'Round of 16',   count:8,  pts:6,  unlock:new Date('2026-07-02T23:55:00+08:00'), lock:new Date('2026-07-03T23:55:00+08:00')},
+  {id:'qf', label:'Quarter-finals',count:4,  pts:8,  unlock:new Date('2026-07-08T23:55:00+08:00'), lock:new Date('2026-07-09T23:55:00+08:00')},
+  {id:'sf', label:'Semi-finals',   count:2,  pts:8,  unlock:new Date('2026-07-13T23:55:00+08:00'), lock:new Date('2026-07-14T23:55:00+08:00')},
+  {id:'3p', label:'3rd Place',     count:1,  pts:4,  unlock:new Date('2026-07-18T23:55:00+08:00'), lock:new Date('2026-07-18T23:55:00+08:00')},
+  {id:'f',  label:'Final',         count:1,  pts:10, unlock:new Date('2026-07-18T23:55:00+08:00'), lock:new Date('2026-07-19T23:55:00+08:00')},
 ];
 function stageOpen(r){ const n=new Date(); return n>=r.unlock && n<r.lock; }
 function stageLocked(r){ return new Date()>=r.lock; }
@@ -1171,7 +1258,22 @@ function localAll(sheet){
 async function loadPredictions(){
   if(!wallet)return;
   const s=await sheetsGet('predictions',wallet);
-  if(s&&typeof s==='object')predictions={groups:s.groups||{},table:s.table||{},knockout:s.knockout||{},champion:s.champion||'',awards:s.awards||{glove:{player:'',team:''},boot:{player:'',team:''},assist:{player:'',team:''}}};
+  if(s&&typeof s==='object'){
+    predictions={
+      groups:s.groups||{},
+      table:s.table||{},
+      knockout:s.knockout||{},
+      champion:s.champion||'',
+      awards:s.awards||{glove:{player:'',team:''},boot:{player:'',team:''},assist:{player:'',team:''}}
+    };
+    // Validate group table entries — clear any with duplicates (old dropdown format)
+    Object.entries(GROUPS).forEach(([g,teams])=>{
+      const t=predictions.table[g];
+      if(!Array.isArray(t)||t.length!==4||!teams.every(x=>t.includes(x))||new Set(t).size!==4){
+        delete predictions.table[g]; // reset to default on render
+      }
+    });
+  }
   const res=await sheetsGet('results','official');
   if(res&&typeof res==='object')results=res;
 }
@@ -1190,24 +1292,33 @@ function countPts(p){
   let ch=p.champion?1:0;
   return grp+tbl+ko+ch;
 }
+// KO points by round
+const KO_PTS={'r32':4,'r16':6,'qf':8,'sf':8,'3p':4,'f':10};
 function calcScore(p){
   let pts=0;
   // Group stage: 2pts per correct result
   const g=p.groups||{};
   Object.keys(g).forEach(k=>{if(g[k]&&results[k]&&results[k]===g[k])pts+=2;});
-  // Group table: 1pt per correctly placed team
+  // Group table: 3pts for 1st, 2pts for 2nd-4th
   const t=p.table||{};
   Object.keys(t).forEach(grp=>{
     const pred=t[grp]||[];
     const actual=results['table_'+grp]||[];
-    pred.forEach((team,i)=>{if(team&&actual[i]&&team===actual[i])pts+=1;});
+    pred.forEach((team,i)=>{
+      if(team&&actual[i]&&team===actual[i])pts+=(i===0?3:2);
+    });
   });
-  // Knockout: 4pts per correct pick
+  // Knockout: points vary by round
   const ko=p.knockout||{};
-  Object.keys(ko).forEach(k=>{if(ko[k]&&results[k]&&results[k]===ko[k])pts+=4;});
-  // Champion: 10pts
-  if(p.champion&&results.champion&&results.champion===p.champion)pts+=10;
-  // Awards: 5pts each (player name match, case-insensitive)
+  Object.keys(ko).forEach(k=>{
+    if(ko[k]&&results[k]&&results[k]===ko[k]){
+      const round=k.split('_')[0];
+      pts+=(KO_PTS[round]||4);
+    }
+  });
+  // Champion: 25pts
+  if(p.champion&&results.champion&&results.champion===p.champion)pts+=25;
+  // Awards: 5pts each
   const aw=p.awards||{};
   ['glove','boot','assist'].forEach(k=>{
     if(aw[k]&&aw[k].player&&results['award_'+k]){
@@ -1302,7 +1413,12 @@ function renderGroupTable(){
   if(btn)btn.style.display=locked?'none':'inline-block';
   let html='<div class="gt-grid">';
   Object.entries(GROUPS).forEach(([g,teams])=>{
-    const saved=predictions.table[g]&&predictions.table[g].length===4?predictions.table[g]:[...teams];
+    // Validate saved: must be array of 4 unique team names from this group
+    let saved = [...teams]; // default = group order
+    const st = predictions.table[g];
+    if(Array.isArray(st) && st.length===4 && teams.every(t=>st.includes(t)) && new Set(st).size===4){
+      saved = st;
+    }
     const code=FLAGS[saved[0]]||'';
     html+=`<div class="gt-card card"><div class="card-title">Group ${g}</div>
       <ol class="drag-list" id="drag-${g}" data-group="${g}">`;
@@ -1325,6 +1441,8 @@ function renderGroupTable(){
 }
 function initDragDrop(list){
   let dragItem=null;
+
+  // ── DESKTOP drag events ──
   list.querySelectorAll('.drag-item').forEach(item=>{
     item.addEventListener('dragstart',e=>{
       dragItem=item;item.classList.add('dragging');
@@ -1332,10 +1450,7 @@ function initDragDrop(list){
     });
     item.addEventListener('dragend',()=>{
       item.classList.remove('dragging');dragItem=null;
-      const grp=list.dataset.group;
-      const order=[...list.querySelectorAll('.drag-item')].map(el=>el.dataset.team);
-      predictions.table[grp]=order;
-      list.querySelectorAll('.drag-pos').forEach((p,i)=>{p.textContent=['1st','2nd','3rd','4th'][i];});
+      saveDragOrder(list);
     });
   });
   list.addEventListener('dragover',e=>{
@@ -1344,8 +1459,48 @@ function initDragDrop(list){
     const after=getDragAfter(list,e.clientY);
     if(after==null)list.appendChild(dragItem);
     else list.insertBefore(dragItem,after);
-    list.querySelectorAll('.drag-pos').forEach((p,i)=>{p.textContent=['1st','2nd','3rd','4th'][i];});
+    updatePosLabels(list);
   });
+
+  // ── MOBILE touch events ──
+  let touchDragItem=null;
+  list.querySelectorAll('.drag-item').forEach(item=>{
+    item.addEventListener('touchstart',e=>{
+      touchDragItem=item;
+      item.classList.add('dragging');
+    },{passive:true});
+  });
+  list.addEventListener('touchmove',e=>{
+    if(!touchDragItem)return;
+    e.preventDefault();
+    const touch=e.touches[0];
+    const target=document.elementFromPoint(touch.clientX,touch.clientY);
+    const dropEl=target&&target.closest('.drag-item');
+    if(dropEl&&dropEl!==touchDragItem&&dropEl.closest('.drag-list')===list){
+      const rect=dropEl.getBoundingClientRect();
+      if(touch.clientY<rect.top+rect.height/2){
+        list.insertBefore(touchDragItem,dropEl);
+      } else {
+        list.insertBefore(touchDragItem,dropEl.nextSibling);
+      }
+      updatePosLabels(list);
+    }
+  },{passive:false});
+  list.addEventListener('touchend',()=>{
+    if(!touchDragItem)return;
+    touchDragItem.classList.remove('dragging');
+    touchDragItem=null;
+    saveDragOrder(list);
+  });
+}
+function updatePosLabels(list){
+  list.querySelectorAll('.drag-pos').forEach((p,i)=>{p.textContent=['1st','2nd','3rd','4th'][i];});
+}
+function saveDragOrder(list){
+  const grp=list.dataset.group;
+  const order=[...list.querySelectorAll('.drag-item')].map(el=>el.dataset.team);
+  predictions.table[grp]=order;
+  updatePosLabels(list);
 }
 function getDragAfter(list,y){
   const items=[...list.querySelectorAll('.drag-item:not(.dragging)')];
@@ -1394,7 +1549,7 @@ function renderChampion(){
   const locked=picksLocked();
   sel.innerHTML='<option value="">-- Select a team --</option>'+
     ALL_TEAMS.map(t=>`<option value="${t}"${predictions.champion===t?' selected':''}>${t}</option>`).join('');
-  sel.onchange=()=>{if(!locked){predictions.champion=sel.value;}};
+  sel.onchange=()=>{if(!locked)predictions.champion=sel.value;};
   sel.disabled=locked;
   sel.style.opacity=locked?'0.5':'1';
   const champBtn=document.querySelector('#tab-champion .save-btn');
@@ -1565,15 +1720,13 @@ function renderAwards(){
   document.getElementById('user-bar-awards').innerHTML=userBarHTML();
   const a=predictions.awards||{};
   const fields=[
-    {id:'glove',pid:'award-glove-player',tid:'award-glove-team'},
-    {id:'boot', pid:'award-boot-player', tid:'award-boot-team'},
-    {id:'assist',pid:'award-assist-player',tid:'award-assist-team'},
+    {id:'glove',pid:'award-glove-player'},
+    {id:'boot', pid:'award-boot-player'},
+    {id:'assist',pid:'award-assist-player'},
   ];
   fields.forEach(f=>{
     const pp=document.getElementById(f.pid);
-    const pt=document.getElementById(f.tid);
     if(pp){pp.value=a[f.id]?.player||'';pp.disabled=locked;pp.oninput=()=>{if(!predictions.awards[f.id])predictions.awards[f.id]={};predictions.awards[f.id].player=pp.value;};}
-    if(pt){pt.value=a[f.id]?.team||'';pt.disabled=locked;pt.oninput=()=>{if(!predictions.awards[f.id])predictions.awards[f.id]={};predictions.awards[f.id].team=pt.value;};}
   });
   const btn=document.getElementById('awards-save-btn');
   const hint=document.getElementById('awards-hint');
