@@ -503,7 +503,7 @@ body::-webkit-scrollbar{display:none;}
     </div>
     <div id="user-bar-groups"></div>
     <div id="groups-content" class="grid2"></div>
-    <div class="autosave-hint">Picks save automatically when you make a selection</div>
+    <button class="save-pill" onclick="savePredictions()" style="margin-top:1rem;">Save group picks</button>
   </div>
 
   <!-- GROUP TABLE -->
@@ -515,7 +515,7 @@ body::-webkit-scrollbar{display:none;}
     </div>
     <div id="user-bar-grouptable"></div>
     <div id="grouptable-content"></div>
-    <div class="autosave-hint" id="grouptable-save-btn">Picks save automatically when you make a selection</div>
+    <button class="save-pill" onclick="savePredictions()" id="grouptable-save-btn" style="margin-top:1rem;">Save group table picks</button>
   </div>
 
   <!-- KNOCKOUT -->
@@ -527,7 +527,7 @@ body::-webkit-scrollbar{display:none;}
     </div>
     <div id="user-bar-knockout"></div>
     <div id="knockout-content"></div>
-    <div class="autosave-hint">Picks save automatically when you make a selection</div>
+    <button class="save-pill" onclick="savePredictions()" style="margin-top:1rem;">Save knockout picks</button>
   </div>
 
   <!-- CHAMPION -->
@@ -538,14 +538,15 @@ body::-webkit-scrollbar{display:none;}
       <div id="countdown-champion"></div>
     </div>
     <div id="user-bar-champion"></div>
-    <div style="display:flex;justify-content:center;">
-    <div class="card champ-card">
-      <div class="card-title">Your champion pick</div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300;">Select the team you believe will win the FIFA World Cup 2026.</p>
-      <select class="champ-select" id="champ-sel">
-        <option value="">-- Select a team --</option>
-      </select>
-      <button class="save-pill" onclick="savePredictions()" style="display:block;margin-top:1rem;">Save champion pick</button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1rem;">
+      <div class="card champ-card">
+        <div class="card-title">Your champion pick</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300;">Select the team you believe will win the FIFA World Cup 2026.</p>
+        <select class="champ-select" id="champ-sel">
+          <option value="">-- Select a team --</option>
+        </select>
+      </div>
+      <button class="save-pill" onclick="savePredictions()">Save champion pick</button>
     </div>
   </div>
 
@@ -1410,7 +1411,7 @@ function renderGroupTable(){
   document.getElementById('user-bar-grouptable').innerHTML=userBarHTML();
   const locked=picksLocked();
   const btn=document.getElementById('grouptable-save-btn');
-  if(btn)btn.style.display=locked?'none':'inline-block';
+  if(btn)btn.style.display=locked?'none':'inline-flex';
   let html='<div class="gt-grid">';
   Object.entries(GROUPS).forEach(([g,teams])=>{
     // Validate saved: must be array of 4 unique team names from this group
