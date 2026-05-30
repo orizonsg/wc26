@@ -150,6 +150,94 @@
     background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted);
     font-family:var(--font-b);font-size:13px;cursor:pointer;}
 
+  /* VESTING SELECTOR */
+  .vest-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.25rem;}
+  @media(max-width:580px){.vest-grid{grid-template-columns:repeat(3,1fr);gap:6px;}}
+  .vest-opt{
+    padding:10px 6px;border-radius:var(--r);text-align:center;cursor:pointer;
+    border:1px solid rgba(0,200,180,0.15);background:var(--surface2);
+    transition:all .2s;user-select:none;
+  }
+  .vest-opt:hover{border-color:rgba(0,200,180,0.3);}
+  .vest-opt.on{border-color:var(--teal);background:rgba(0,200,180,0.1);}
+  .vest-opt.cost{border-color:rgba(255,208,96,0.2);}
+  .vest-opt.cost.on{border-color:var(--gold);background:rgba(255,208,96,0.1);}
+  .vest-period{font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--teal2);}
+  .vest-opt.cost .vest-period{color:var(--gold);}
+  .vest-wbnb{font-size:10px;color:var(--muted2);margin-top:3px;}
+  .vest-badge{font-size:9px;font-weight:600;margin-top:3px;padding:2px 6px;
+    border-radius:20px;display:inline-block;}
+  .vest-badge.free{background:rgba(0,200,180,0.12);color:var(--teal);}
+  .vest-badge.paid{background:rgba(255,208,96,0.1);color:var(--gold);}
+
+  .vest-breakdown{
+    background:var(--surface2);border-radius:var(--r2);
+    padding:1.25rem;border:1px solid rgba(0,200,180,0.1);
+  }
+  .vest-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);
+    font-size:13px;
+  }
+  .vest-row:last-child{border-bottom:none;}
+  .vest-row-label{color:var(--muted);font-weight:300;}
+  .vest-row-value{font-family:var(--font-b);font-size:13px;color:var(--teal2);font-weight:600;}
+  .vest-row-value.gold{color:var(--gold);font-family:var(--font-b);font-size:13px;font-weight:600;}
+  .vest-row-value.muted{color:var(--muted);font-family:var(--font-b);font-size:13px;font-weight:400;}
+  .vest-note{
+    margin-top:10px;font-size:11px;color:rgba(255,208,96,0.7);
+    font-weight:300;line-height:1.6;
+    padding:8px 12px;
+    background:rgba(255,208,96,0.05);
+    border-radius:var(--r);
+    border:1px solid rgba(255,208,96,0.1);
+  }
+  .roi-row{border-left-color:rgba(168,85,247,0.6) !important;}
+  .roi-row .res-row-mid{color:#c084fc !important;}
+  .roi-row .res-row-right{color:#c084fc !important;}
+
+  /* CHART */
+  .chart-wrap{position:relative;width:100%;height:240px;margin-bottom:1rem;overflow:hidden;}
+  .chart-wrap canvas{display:block;width:100% !important;height:240px !important;}
+  .chart-legend{display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:.75rem;}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}
+  .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  /* NET VESTING ROI */
+  .net-vest-card{
+    background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);
+    border-radius:var(--r2);padding:1.25rem;margin-top:1.25rem;
+  }
+  .net-vest-row{display:flex;justify-content:space-between;align-items:center;
+    padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;}
+  .net-vest-row:last-child{border-bottom:none;}
+  .net-vest-label{color:var(--muted);font-weight:300;}
+  .net-vest-val{font-family:var(--font-b);font-size:13px;font-weight:600;}
+  .net-vest-val.purple{color:#c084fc;}
+  .net-vest-val.red{color:#f87171;}
+  .net-vest-val.teal{color:var(--teal2);}
+  .net-vest-val.gold{color:var(--gold);}
+
+  /* CHART TOOLTIP */
+  .chart-tooltip{
+    position:absolute;pointer-events:none;
+    background:rgba(13,26,40,0.96);
+    border:1px solid rgba(0,200,180,0.3);
+    border-radius:var(--r);padding:10px 14px;
+    font-size:12px;white-space:nowrap;
+    box-shadow:0 4px 20px rgba(0,0,0,0.4);
+    z-index:10;display:none;
+    min-width:180px;
+  }
+  .tt-header{font-family:var(--font-d);font-size:10px;color:var(--teal);
+    letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;
+    padding-bottom:6px;border-bottom:1px solid rgba(0,200,180,0.15);}
+  .tt-row{display:flex;justify-content:space-between;gap:16px;
+    padding:2px 0;font-weight:300;color:var(--muted);}
+  .tt-val{font-weight:600;color:var(--text);font-family:var(--font-b);}
+  .tt-val.teal{color:var(--teal2);}
+  .tt-val.gold{color:var(--gold);}
+  .tt-val.purple{color:#c084fc;}
+
   /* DISCLAIMER */
   .disc{margin-top:1.5rem;padding:12px 16px;background:rgba(255,208,96,0.04);
     border:1px solid rgba(255,208,96,0.12);border-radius:var(--r);
@@ -207,12 +295,18 @@
         <span class="field-hint">Accumulated interest balance</span>
       </div>
       <div class="field">
-        <label>Reward Yield (per rebase)</label>
+        <label>Reward Yield <span style="font-size:9px;font-weight:400;color:var(--muted2);letter-spacing:.04em;text-transform:none;">(per rebase)</span></label>
         <div class="field-wrap">
           <input type="number" id="yld" min="0" step="any" placeholder="0.1019"/>
           <span class="field-unit">%</span>
         </div>
-        <span class="field-hint">Shown on orizon.vip Fixed Stake page — e.g. 0.1019 for 360D</span>
+        <span class="field-hint">
+          Find this on <a href="https://orizon.vip/#/restake" target="_blank" style="color:var(--teal);text-decoration:none;">orizon.vip</a> under Fixed Stake → look for:
+          <span style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;padding:4px 10px;background:rgba(0,200,180,0.07);border:1px solid rgba(0,200,180,0.2);border-radius:6px;font-size:11px;color:var(--teal2);font-weight:500;white-space:nowrap;">
+            Next Reward Yield &nbsp;→&nbsp; e.g. 0.1017%
+          </span>
+          <span style="display:block;margin-top:5px;color:rgba(255,208,96,0.75);">⚠ Enter manually — not fetched automatically.</span>
+        </span>
       </div>
       <div class="field">
         <label>$ORI Price (USD) <span style="font-size:10px;color:var(--teal);font-weight:400;">live</span></label>
@@ -304,6 +398,126 @@
       </table>
     </div>
 
+    <!-- ROI ROW -->
+    <div class="res-rows" style="margin-top:0;margin-bottom:1.75rem;" id="roi-section" style="display:none;">
+      <div class="res-row roi-row" id="c-roi">
+        <div class="res-row-left">
+          <span class="res-icon">📈</span>
+          <span class="res-lbl">Return on Stake</span>
+        </div>
+        <div class="res-row-mid" id="g-roi">—</div>
+        <div class="res-row-right" id="t-roi"><span class="res-ph" id="p-roi">Calculated after projection</span></div>
+      </div>
+    </div>
+
+    <!-- VESTING PERIOD SELECTOR -->
+    <div class="sec-title" style="margin-top:0;">Vesting Period on Withdrawal</div>
+    <p style="font-size:12px;color:var(--muted);font-weight:300;margin-bottom:1.25rem;line-height:1.7;">
+      Assumes you withdraw your <strong style="color:var(--text);">entire interest balance</strong> at the end of the projection period.
+      Yield is released <strong style="color:var(--text);">linearly</strong> over the chosen vesting period.
+      WBNB acceleration fee is a <strong style="color:var(--gold);">separate wallet payment</strong> — your full yield is still received.
+    </p>
+    <div class="vest-grid">
+      <div class="vest-opt on" data-days="180" data-wbnb="0" onclick="selectVest(this)">
+        <div class="vest-period">180 days</div>
+        <div class="vest-wbnb">No WBNB cost</div>
+        <div class="vest-badge free">Free</div>
+      </div>
+      <div class="vest-opt cost" data-days="150" data-wbnb="5" onclick="selectVest(this)">
+        <div class="vest-period">150 days</div>
+        <div class="vest-wbnb">5% WBNB fee</div>
+        <div class="vest-badge paid">Accelerated</div>
+      </div>
+      <div class="vest-opt cost" data-days="100" data-wbnb="10" onclick="selectVest(this)">
+        <div class="vest-period">100 days</div>
+        <div class="vest-wbnb">10% WBNB fee</div>
+        <div class="vest-badge paid">Accelerated</div>
+      </div>
+      <div class="vest-opt cost" data-days="45" data-wbnb="20" onclick="selectVest(this)">
+        <div class="vest-period">45 days</div>
+        <div class="vest-wbnb">20% WBNB fee</div>
+        <div class="vest-badge paid">Accelerated</div>
+      </div>
+      <div class="vest-opt cost" data-days="15" data-wbnb="25" onclick="selectVest(this)">
+        <div class="vest-period">15 days</div>
+        <div class="vest-wbnb">25% WBNB fee</div>
+        <div class="vest-badge paid">Accelerated</div>
+      </div>
+    </div>
+
+    <div class="vest-breakdown" id="vest-breakdown" style="display:none;">
+      <div class="vest-row">
+        <span class="vest-row-label">Interest to withdraw</span>
+        <span class="vest-row-value" id="vb-yield">—</span>
+      </div>
+      <div class="vest-row">
+        <span class="vest-row-label">Vesting period</span>
+        <span class="vest-row-value" id="vb-period">—</span>
+      </div>
+      <div class="vest-row">
+        <span class="vest-row-label">Released per day</span>
+        <span class="vest-row-value" id="vb-daily">—</span>
+      </div>
+      <div class="vest-row">
+        <span class="vest-row-label">Full yield received by</span>
+        <span class="vest-row-value" id="vb-enddate">—</span>
+      </div>
+      <div class="vest-row" id="vb-wbnb-row" style="display:none;">
+        <span class="vest-row-label">⚡ WBNB acceleration fee</span>
+        <span class="vest-row-value gold" id="vb-wbnb">—</span>
+      </div>
+      <div class="vest-row" id="vb-wbnb-sgd-row" style="display:none;">
+        <span class="vest-row-label" style="padding-left:1rem;font-size:11px;">↳ In SGD</span>
+        <span class="vest-row-value gold" id="vb-wbnb-sgd">—</span>
+      </div>
+      <div id="vest-note-wrap"></div>
+    </div>
+
+    <!-- NET VESTING ROI -->
+    <div class="net-vest-card" id="net-vest-card" style="display:none;">
+      <div class="sec-title" style="margin-bottom:1rem;">Net Returns After Vesting Cost</div>
+      <div class="net-vest-row">
+        <span class="net-vest-label">Gross interest earned</span>
+        <span class="net-vest-val teal" id="nv-gross">—</span>
+      </div>
+      <div class="net-vest-row" id="nv-fee-row">
+        <span class="net-vest-label">⚡ WBNB acceleration fee (separate cost)</span>
+        <span class="net-vest-val red" id="nv-fee">—</span>
+      </div>
+      <div class="net-vest-row">
+        <span class="net-vest-label">Net gain in USD (after fee)</span>
+        <span class="net-vest-val purple" id="nv-net-usd">—</span>
+      </div>
+      <div class="net-vest-row">
+        <span class="net-vest-label">Net gain in SGD (after fee)</span>
+        <span class="net-vest-val gold" id="nv-net-sgd">—</span>
+      </div>
+      <div class="net-vest-row">
+        <span class="net-vest-label">Net ROI on stake (after fee)</span>
+        <span class="net-vest-val purple" id="nv-roi">—</span>
+      </div>
+    </div>
+
+    <!-- COMPOUND GROWTH CHART -->
+    <div style="margin-top:1.75rem;" id="chart-section" style="display:none;">
+      <div class="sec-title">Compound Growth Chart</div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00e5ce;"></div>Total balance (sORI)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(0,200,180,0.3);width:24px;height:2px;border-radius:0;"></div>Interest earned</div>
+      </div>
+      <div class="chart-wrap" id="chart-wrap-el">
+        <canvas id="growthChart"></canvas>
+        <div class="chart-tooltip" id="chart-tooltip">
+          <div class="tt-header" id="tt-header">Day 0</div>
+          <div class="tt-row"><span>Balance</span><span class="tt-val teal" id="tt-bal">—</span></div>
+          <div class="tt-row"><span>Interest earned</span><span class="tt-val teal" id="tt-int">—</span></div>
+          <div class="tt-row"><span>Value (USD)</span><span class="tt-val" id="tt-usd">—</span></div>
+          <div class="tt-row"><span>Value (SGD)</span><span class="tt-val gold" id="tt-sgd">—</span></div>
+          <div class="tt-row"><span>ROI on stake</span><span class="tt-val purple" id="tt-roi">—</span></div>
+        </div>
+      </div>
+    </div>
+
     <!-- START STAKING BUTTON -->
     <div class="stake-wrap">
       <button class="stake-btn" onclick="openStakeModal()">
@@ -342,6 +556,78 @@
 </div>
 
 <script>
+// ── VESTING STATE ──
+let vestDays = 180;
+let vestWBNB = 0;
+
+function selectVest(el) {
+  document.querySelectorAll('.vest-opt').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+  vestDays = parseInt(el.dataset.days);
+  vestWBNB = parseInt(el.dataset.wbnb);
+  // Recalculate if already calculated
+  if (document.getElementById('g-ori') && document.getElementById('g-ori').textContent !== '—') calculate();
+}
+
+function updateVesting(gainORI, price, sgd, projDays) {
+  const bd = document.getElementById('vest-breakdown');
+  if(!bd) return;
+  bd.style.display = 'block';
+
+  const dailyORI = gainORI / vestDays;
+  // Date = today + projection period + vesting period
+  const today = new Date();
+  const endDate = new Date(today.getTime() + (projDays + vestDays) * 86400000);
+  const endStr = endDate.toLocaleDateString('en-SG', {day:'numeric',month:'short',year:'numeric'});
+
+  const sv=(id,val)=>{ const el=document.getElementById(id); if(el)el.textContent=val; };
+  sv('vb-yield',   fmt(gainORI) + ' sORI');
+  sv('vb-period',  vestDays + ' days');
+  sv('vb-daily',   fmt(dailyORI) + ' sORI / day');
+  sv('vb-enddate', endStr);
+
+  const wbnbRow    = document.getElementById('vb-wbnb-row');
+  const wbnbSGDRow = document.getElementById('vb-wbnb-sgd-row');
+  const noteWrap   = document.getElementById('vest-note-wrap');
+  if(!wbnbRow || !wbnbSGDRow || !noteWrap) return;
+
+  const netCard   = document.getElementById('net-vest-card');
+  const nvFeeRow  = document.getElementById('nv-fee-row');
+  const grossUSD  = gainORI * price;
+  const grossSGD  = grossUSD * sgd;
+
+  if (vestWBNB > 0) {
+    const wbnbCostUSD = (vestWBNB / 100) * gainORI * price;
+    const wbnbCostSGD = wbnbCostUSD * sgd;
+    const netUSD      = grossUSD - wbnbCostUSD;
+    const netSGD      = grossSGD - wbnbCostSGD;
+    const stakeVal    = parseFloat(document.getElementById('stake').value)||0;
+    const interVal    = parseFloat(document.getElementById('interest').value)||0;
+    const stakeUSD    = stakeVal * price;
+    const netRoiPct   = stakeUSD > 0 ? (netUSD / stakeUSD) * 100 : 0;
+
+    wbnbRow.style.display    = 'flex';
+    wbnbSGDRow.style.display = 'flex';
+    sv('vb-wbnb', fmtC(wbnbCostUSD,'$') + ' USD  (' + vestWBNB + '% of yield value)');
+    sv('vb-wbnb-sgd', fmtC(wbnbCostSGD,'S$') + ' SGD');
+    noteWrap.innerHTML = `<div class="vest-note">⚠ The WBNB fee is a <strong>separate payment from your wallet</strong> — it does not reduce your yield. You still receive the full ${fmt(gainORI)} sORI, released over ${vestDays} days.</div>`;
+
+    // Net vesting ROI card
+    if(netCard){ netCard.style.display='block'; }
+    if(nvFeeRow){ nvFeeRow.style.display='flex'; }
+    sv('nv-gross',   '+' + fmt(gainORI) + ' sORI  (' + fmtC(grossUSD,'$') + ')');
+    sv('nv-fee',     '-' + fmtC(wbnbCostUSD,'$') + ' USD / -' + fmtC(wbnbCostSGD,'S$') + ' SGD');
+    sv('nv-net-usd', '+' + fmtC(netUSD,'$') + ' USD');
+    sv('nv-net-sgd', '+' + fmtC(netSGD,'S$') + ' SGD');
+    sv('nv-roi',     '+' + netRoiPct.toFixed(2) + '% on stake (after WBNB fee)');
+  } else {
+    wbnbRow.style.display    = 'none';
+    wbnbSGDRow.style.display = 'none';
+    noteWrap.innerHTML = `<div class="vest-note" style="color:rgba(0,200,180,0.7);border-color:rgba(0,200,180,0.1);background:rgba(0,200,180,0.04);">✅ No WBNB fee — your full yield of ${fmt(gainORI)} sORI is released over 180 days at no extra cost.</div>`;
+    if(netCard){ netCard.style.display='none'; }
+  }
+}
+
 // ── CONFIG ──
 const REBASE_HRS   = 3.6;        // 3h 36min fixed
 const REBASES_DAY  = 24 / REBASE_HRS; // 6.667
@@ -465,18 +751,20 @@ function calculate() {
   const totUSD  = future  * price;
   const totSGD  = totUSD  * sgd;
 
-  // Result rows
+  // Result rows — null-guarded
   ['ori','usd','sgd'].forEach(k=>{
     const ph=document.getElementById('p-'+k);
     if(ph)ph.style.display='none';
-    document.getElementById('c-'+k).classList.add('lit');
+    const c=document.getElementById('c-'+k);
+    if(c)c.classList.add('lit');
   });
-  document.getElementById('g-ori').textContent = '+' + fmt(gainORI) + ' sORI';
-  document.getElementById('t-ori').textContent = 'Total: ' + fmt(future) + ' sORI';
-  document.getElementById('g-usd').textContent = '+' + fmtC(gainUSD,'$');
-  document.getElementById('t-usd').textContent = 'Total: ' + fmtC(totUSD,'$');
-  document.getElementById('g-sgd').textContent = '+' + fmtC(gainSGD,'S$');
-  document.getElementById('t-sgd').textContent = 'Total: ' + fmtC(totSGD,'S$');
+  const safe=(id,val)=>{ const el=document.getElementById(id); if(el)el.textContent=val; };
+  safe('g-ori', '+' + fmt(gainORI) + ' sORI');
+  safe('t-ori', 'Total: ' + fmt(future) + ' sORI');
+  safe('g-usd', '+' + fmtC(gainUSD,'$'));
+  safe('t-usd', 'Total: ' + fmtC(totUSD,'$'));
+  safe('g-sgd', '+' + fmtC(gainSGD,'S$'));
+  safe('t-sgd', 'Total: ' + fmtC(totSGD,'S$'));
 
   // Table milestones
   const ms = [1,7,30,60,90,180,360].filter(d => d < days);
@@ -498,6 +786,24 @@ function calculate() {
     </tr>`;
   });
   document.getElementById('tbody').innerHTML = rows.join('');
+
+  // ── ROI % ──
+  const roiPct = stake > 0 ? (gainORI / stake) * 100 : 0;
+  const roiAnnualised = stake > 0 ? ((future/init - 1) * (365/days) * 100) : 0;
+  const elPRoi = document.getElementById('p-roi');
+  const elCRoi = document.getElementById('c-roi');
+  const elGRoi = document.getElementById('g-roi');
+  const elTRoi = document.getElementById('t-roi');
+  if(elPRoi) elPRoi.style.display = 'none';
+  if(elCRoi) elCRoi.classList.add('lit');
+  if(elGRoi) elGRoi.textContent = '+' + roiPct.toFixed(2) + '% on stake';
+  if(elTRoi) elTRoi.textContent = roiAnnualised.toFixed(1) + '% annualised';
+
+  // ── VESTING BREAKDOWN ──
+  updateVesting(gainORI, price, sgdRate || 1.35, days);
+
+  // ── CHART ──
+  drawChart(init, rate, days);
 }
 
 // ── STAKING MODAL ──
@@ -519,6 +825,242 @@ function copyLink() {
     btn.textContent = '✅ Copied!';
     setTimeout(() => btn.textContent = '📋 Copy Link', 2000);
   });
+}
+
+// ── CHART ──
+function drawChart(init, rate, days) {
+  const section = document.getElementById('chart-section');
+  if(section) section.style.display = 'block';
+  // Double rAF ensures browser has done layout after display:block
+  requestAnimationFrame(()=> requestAnimationFrame(()=> _doDrawChart(init, rate, days)));
+}
+// Store chart state for tooltip
+let _chartState = null;
+
+function _doDrawChart(init, rate, days) {
+  const canvas = document.getElementById('growthChart');
+  if(!canvas) return;
+  const wrapper = document.getElementById('chart-wrap-el') || canvas.parentElement;
+  const W = wrapper ? (wrapper.clientWidth || 700) : 700;
+  const H = 240;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const PAD = {top:16, right:16, bottom:36, left:72};
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top  - PAD.bottom;
+
+  const pts = Math.min(days, 400);
+  const gross = [];
+  for(let i=0; i<=pts; i++){
+    const d = (i/pts)*days;
+    const r = d * REBASES_DAY;
+    gross.push({d, v: init * Math.pow(1+rate,r)});
+  }
+  const maxV = gross[gross.length-1].v;
+  const minV = init;
+  const range = maxV - minV || 1;
+
+  function xP(d){ return PAD.left + (d/days)*cW; }
+  function yP(v){ return PAD.top  + (1-(v-minV)/range)*cH; }
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid
+  for(let i=0;i<=4;i++){
+    const y = PAD.top + (i/4)*cH;
+    ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(PAD.left+cW,y); ctx.stroke();
+    const val = maxV - (i/4)*range;
+    ctx.fillStyle='rgba(230,244,248,0.35)';
+    ctx.font=`10px 'Ubuntu',sans-serif`; ctx.textAlign='right';
+    ctx.fillText(fmt(val), PAD.left-5, y+4);
+  }
+
+  // X labels
+  const steps = Math.min(days<=90?days:6, 8);
+  for(let i=0;i<=steps;i++){
+    const d = Math.round((i/steps)*days);
+    ctx.fillStyle='rgba(230,244,248,0.35)';
+    ctx.font=`10px 'Ubuntu',sans-serif`; ctx.textAlign='center';
+    ctx.fillText('Day '+d, xP(d), H-PAD.bottom+16);
+  }
+
+  // Fill under curve
+  const grad = ctx.createLinearGradient(0,PAD.top,0,PAD.top+cH);
+  grad.addColorStop(0,'rgba(0,200,180,0.2)');
+  grad.addColorStop(1,'rgba(0,200,180,0.01)');
+  ctx.beginPath();
+  gross.forEach((p,i)=> i===0 ? ctx.moveTo(xP(p.d),yP(p.v)) : ctx.lineTo(xP(p.d),yP(p.v)));
+  ctx.lineTo(xP(days),yP(minV));
+  ctx.lineTo(PAD.left,yP(minV));
+  ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+
+  // Curve line
+  ctx.beginPath();
+  gross.forEach((p,i)=> i===0 ? ctx.moveTo(xP(p.d),yP(p.v)) : ctx.lineTo(xP(p.d),yP(p.v)));
+  ctx.strokeStyle='#00e5ce'; ctx.lineWidth=2.5; ctx.stroke();
+
+  // Initial balance line (dashed)
+  ctx.beginPath();
+  ctx.moveTo(PAD.left,yP(minV)); ctx.lineTo(PAD.left+cW,yP(minV));
+  ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1;
+  ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Store state for tooltip
+  _chartState = {init, rate, days, W, H, PAD, cW, cH, maxV, minV, xP, yP}; // rate = yld/100
+
+  // Setup hover events
+  setupChartHover(canvas, ctx);
+}
+
+function setupChartHover(canvas, ctx) {
+  // Remove old listeners by cloning
+  const newCanvas = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(newCanvas, canvas);
+  document.getElementById('growthChart') && null; // keep ref
+
+  const tooltip  = document.getElementById('chart-tooltip');
+  const wrapper  = document.getElementById('chart-wrap-el');
+
+  function onMove(e) {
+    if(!_chartState || !tooltip) return;
+    const rect = newCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
+    const {init,rate,days,W,H,PAD,cW,cH,maxV,minV} = _chartState;
+
+    // Only show inside chart area
+    if(mx < PAD.left || mx > PAD.left+cW || my < PAD.top || my > PAD.top+cH) {
+      tooltip.style.display='none'; return;
+    }
+
+    const pct = (mx - PAD.left) / cW;
+    const d   = pct * days;
+    const r   = d * REBASES_DAY;
+    const bal = init * Math.pow(1+rate, r);
+    const interest = bal - init;
+    const price = parseFloat(document.getElementById('price').value) || 55;
+    const sgd   = sgdRate || 1.35;
+    const stk   = parseFloat(document.getElementById('stake').value) || 0;
+    const roiPct = stk > 0 ? (interest / stk) * 100 : 0;
+
+    // Date
+    const today = new Date();
+    const dt = new Date(today.getTime() + d*86400000);
+    const dtStr = dt.toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+
+    document.getElementById('tt-header').textContent = 'Day ' + Math.round(d) + ' · ' + dtStr;
+    document.getElementById('tt-bal').textContent    = fmt(bal) + ' sORI';
+    document.getElementById('tt-int').textContent    = '+' + fmt(interest) + ' sORI';
+    document.getElementById('tt-usd').textContent    = fmtC(bal*price,'$') + ' USD';
+    document.getElementById('tt-sgd').textContent    = fmtC(bal*price*sgd,'S$') + ' SGD';
+    document.getElementById('tt-roi').textContent    = '+' + roiPct.toFixed(2) + '%';
+
+    // Position tooltip
+    let tx = mx + 14;
+    let ty = my - 10;
+    const ttW = 210;
+    if(tx + ttW > W) tx = mx - ttW - 14;
+    if(ty + 140 > H) ty = H - 150;
+    if(ty < 0) ty = 4;
+    tooltip.style.left    = tx + 'px';
+    tooltip.style.top     = ty + 'px';
+    tooltip.style.display = 'block';
+
+    // Draw crosshair
+    const cs = _chartState;
+    const c2  = newCanvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    // Redraw base chart then overlay crosshair
+    _redrawBase(c2, dpr, cs);
+    c2.save();
+    c2.scale(dpr, dpr);
+    c2.strokeStyle='rgba(0,200,180,0.4)';
+    c2.lineWidth=1;
+    c2.setLineDash([4,3]);
+    c2.beginPath(); c2.moveTo(mx,PAD.top); c2.lineTo(mx,PAD.top+cH); c2.stroke();
+    c2.beginPath(); c2.moveTo(PAD.left,my); c2.lineTo(PAD.left+cW,my); c2.stroke();
+    c2.setLineDash([]);
+    // Dot on curve
+    const yVal = PAD.top + (1-(bal-minV)/(maxV-minV))*cH;
+    c2.beginPath();
+    c2.arc(mx, yVal, 5, 0, Math.PI*2);
+    c2.fillStyle='#00e5ce'; c2.fill();
+    c2.strokeStyle='#020a10'; c2.lineWidth=2; c2.stroke();
+    c2.restore();
+  }
+
+  function onLeave() {
+    if(tooltip) tooltip.style.display='none';
+    // Redraw without crosshair
+    if(_chartState){
+      const c2 = newCanvas.getContext('2d');
+      const dpr = window.devicePixelRatio||1;
+      _redrawBase(c2, dpr, _chartState);
+    }
+  }
+
+  newCanvas.addEventListener('mousemove', onMove);
+  newCanvas.addEventListener('touchmove', onMove, {passive:true});
+  newCanvas.addEventListener('mouseleave', onLeave);
+  newCanvas.addEventListener('touchend', onLeave);
+}
+
+function _redrawBase(ctx, dpr, cs) {
+  const {init,rate,days,W,H,PAD,cW,cH,maxV,minV} = cs;
+  ctx.clearRect(0,0,W*dpr,H*dpr);
+  ctx.save(); ctx.scale(dpr,dpr);
+  const xP=(d)=>PAD.left+(d/days)*cW;
+  const yP=(v)=>PAD.top+(1-(v-minV)/(maxV-minV||1))*cH;
+
+  // Grid
+  for(let i=0;i<=4;i++){
+    const y=PAD.top+(i/4)*cH;
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(PAD.left,y);ctx.lineTo(PAD.left+cW,y);ctx.stroke();
+    const val=maxV-(i/4)*(maxV-minV);
+    ctx.fillStyle='rgba(230,244,248,0.35)';
+    ctx.font="10px 'Ubuntu',sans-serif";ctx.textAlign='right';
+    ctx.fillText(fmt(val),PAD.left-5,y+4);
+  }
+  const steps=Math.min(days<=90?days:6,8);
+  for(let i=0;i<=steps;i++){
+    const d=Math.round((i/steps)*days);
+    ctx.fillStyle='rgba(230,244,248,0.35)';
+    ctx.font="10px 'Ubuntu',sans-serif";ctx.textAlign='center';
+    ctx.fillText('Day '+d,xP(d),H-PAD.bottom+16);
+  }
+
+  // Curve points — rate is already yld/100
+  const pts=Math.min(days,400);
+  const gross=[];
+  for(let i=0;i<=pts;i++){
+    const d=(i/pts)*days;
+    gross.push({d,v:init*Math.pow(1+rate,d*REBASES_DAY)});
+  }
+
+  const grad=ctx.createLinearGradient(0,PAD.top,0,PAD.top+cH);
+  grad.addColorStop(0,'rgba(0,200,180,0.2)');
+  grad.addColorStop(1,'rgba(0,200,180,0.01)');
+  ctx.beginPath();
+  gross.forEach((p,i)=>i===0?ctx.moveTo(xP(p.d),yP(p.v)):ctx.lineTo(xP(p.d),yP(p.v)));
+  ctx.lineTo(xP(days),yP(minV));ctx.lineTo(PAD.left,yP(minV));
+  ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();
+  gross.forEach((p,i)=>i===0?ctx.moveTo(xP(p.d),yP(p.v)):ctx.lineTo(xP(p.d),yP(p.v)));
+  ctx.strokeStyle='#00e5ce';ctx.lineWidth=2.5;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(PAD.left,yP(minV));ctx.lineTo(PAD.left+cW,yP(minV));
+  ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;
+  ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);
+  ctx.restore();
 }
 
 // ── INIT ──
