@@ -569,19 +569,19 @@ function selectVest(el) {
   if (document.getElementById('g-ori') && document.getElementById('g-ori').textContent !== '—') calculate();
 }
 
-function updateVesting(gainORI, price, sgd, projDays) {
+function updateVesting(totalInterest, stake, price, sgd, projDays) {
   const bd = document.getElementById('vest-breakdown');
   if(!bd) return;
   bd.style.display = 'block';
 
-  const dailyORI = gainORI / vestDays;
+  const dailyORI = totalInterest / vestDays;
   // Date = today + projection period + vesting period
   const today = new Date();
   const endDate = new Date(today.getTime() + (projDays + vestDays) * 86400000);
   const endStr = endDate.toLocaleDateString('en-SG', {day:'numeric',month:'short',year:'numeric'});
 
   const sv=(id,val)=>{ const el=document.getElementById(id); if(el)el.textContent=val; };
-  sv('vb-yield',   fmt(gainORI) + ' sORI');
+  sv('vb-yield',   fmt(totalInterest) + ' sORI');
   sv('vb-period',  vestDays + ' days');
   sv('vb-daily',   fmt(dailyORI) + ' sORI / day');
   sv('vb-enddate', endStr);
@@ -593,29 +593,27 @@ function updateVesting(gainORI, price, sgd, projDays) {
 
   const netCard   = document.getElementById('net-vest-card');
   const nvFeeRow  = document.getElementById('nv-fee-row');
-  const grossUSD  = gainORI * price;
+  const grossUSD  = totalInterest * price;
   const grossSGD  = grossUSD * sgd;
 
   if (vestWBNB > 0) {
-    const wbnbCostUSD = (vestWBNB / 100) * gainORI * price;
+    const wbnbCostUSD = (vestWBNB / 100) * totalInterest * price;
     const wbnbCostSGD = wbnbCostUSD * sgd;
     const netUSD      = grossUSD - wbnbCostUSD;
     const netSGD      = grossSGD - wbnbCostSGD;
-    const stakeVal    = parseFloat(document.getElementById('stake').value)||0;
-    const interVal    = parseFloat(document.getElementById('interest').value)||0;
-    const stakeUSD    = stakeVal * price;
+    const stakeUSD    = stake * price;
     const netRoiPct   = stakeUSD > 0 ? (netUSD / stakeUSD) * 100 : 0;
 
     wbnbRow.style.display    = 'flex';
     wbnbSGDRow.style.display = 'flex';
     sv('vb-wbnb', fmtC(wbnbCostUSD,'$') + ' USD  (' + vestWBNB + '% of yield value)');
     sv('vb-wbnb-sgd', fmtC(wbnbCostSGD,'S$') + ' SGD');
-    noteWrap.innerHTML = `<div class="vest-note">⚠ The WBNB fee is a <strong>separate payment from your wallet</strong> — it does not reduce your yield. You still receive the full ${fmt(gainORI)} sORI, released over ${vestDays} days.</div>`;
+    noteWrap.innerHTML = `<div class="vest-note">⚠ The WBNB fee is a <strong>separate payment from your wallet</strong> — it does not reduce your yield. You still receive the full ${fmt(totalInterest)} sORI, released over ${vestDays} days.</div>`;
 
     // Net vesting ROI card
     if(netCard){ netCard.style.display='block'; }
     if(nvFeeRow){ nvFeeRow.style.display='flex'; }
-    sv('nv-gross',   '+' + fmt(gainORI) + ' sORI  (' + fmtC(grossUSD,'$') + ')');
+    sv('nv-gross',   '+' + fmt(totalInterest) + ' sORI  (' + fmtC(grossUSD,'$') + ')');
     sv('nv-fee',     '-' + fmtC(wbnbCostUSD,'$') + ' USD / -' + fmtC(wbnbCostSGD,'S$') + ' SGD');
     sv('nv-net-usd', '+' + fmtC(netUSD,'$') + ' USD');
     sv('nv-net-sgd', '+' + fmtC(netSGD,'S$') + ' SGD');
@@ -623,7 +621,7 @@ function updateVesting(gainORI, price, sgd, projDays) {
   } else {
     wbnbRow.style.display    = 'none';
     wbnbSGDRow.style.display = 'none';
-    noteWrap.innerHTML = `<div class="vest-note" style="color:rgba(0,200,180,0.7);border-color:rgba(0,200,180,0.1);background:rgba(0,200,180,0.04);">✅ No WBNB fee — your full yield of ${fmt(gainORI)} sORI is released over 180 days at no extra cost.</div>`;
+    noteWrap.innerHTML = `<div class="vest-note" style="color:rgba(0,200,180,0.7);border-color:rgba(0,200,180,0.1);background:rgba(0,200,180,0.04);">✅ No WBNB fee — your full yield of ${fmt(totalInterest)} sORI is released over 180 days at no extra cost.</div>`;
     if(netCard){ netCard.style.display='none'; }
   }
 }
@@ -800,7 +798,8 @@ function calculate() {
   if(elTRoi) elTRoi.textContent = roiAnnualised.toFixed(1) + '% annualised';
 
   // ── VESTING BREAKDOWN ──
-  updateVesting(gainORI, price, sgdRate || 1.35, days);
+  const totalInterest = inter + gainORI; // existing + newly earned interest
+  updateVesting(totalInterest, stake, price, sgdRate || 1.35, days);
 
   // ── CHART ──
   drawChart(init, rate, days);
