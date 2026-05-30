@@ -436,6 +436,19 @@ body::-webkit-scrollbar{display:none;}
 .drag-team-name{font-size:12px;color:var(--text);flex:1;}
 .drag-flag{width:20px;height:15px;border-radius:2px;flex-shrink:0;}
 
+/* ─── DEADLINE ITEMS ─── */
+.deadline-item{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.deadline-item:last-child{border-bottom:none;}
+.dl-label{font-size:13px;color:var(--text);font-weight:300;flex:1;}
+.dl-date{
+  font-family:var(--font-d);font-size:11px;color:var(--teal2);
+  letter-spacing:.06em;white-space:nowrap;flex-shrink:0;
+}
+
 /* ─── SCORING SPACING ─── */
 .scoring-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:0;}
 .score-card{
@@ -671,8 +684,203 @@ body::-webkit-scrollbar{display:none;}
   <!-- PRIZES -->
   <div id="tab-prizes" class="section" style="display:none;">
     <div class="s-hero">
-      <div class="s-title">Prizes <span class="accent">&amp; Rewards</span></div>
-      <div class="s-desc">Stay tuned — prizes will be announced soon.</div>
+      <div class="s-title">Prize <span class="accent">Pool</span></div>
+      <div class="s-desc">World Cup 2026 Predictor · Completely free to join</div>
+    </div>
+    <div style="max-width:680px;">
+
+      <!-- TOTAL POOL BANNER -->
+      <div style="
+        background:linear-gradient(135deg,rgba(0,200,180,0.1),rgba(0,80,200,0.08));
+        border:1px solid rgba(0,200,180,0.25);border-radius:var(--r2);
+        padding:1.5rem;text-align:center;margin-bottom:1.25rem;">
+        <div style="font-size:11px;letter-spacing:.2em;color:rgba(0,200,180,0.7);text-transform:uppercase;font-weight:500;margin-bottom:6px;">Total Prize Pool</div>
+        <div style="font-family:var(--font-d);font-size:32px;font-weight:900;color:var(--gold);letter-spacing:-.01em;margin-bottom:4px;">36.6 $ORI <span style="font-size:18px;color:rgba(255,208,96,0.7);">≈ $2,000+ USD</span></div>
+        <div style="display:inline-block;margin-top:10px;padding:6px 20px;border:2px solid var(--teal);border-radius:40px;font-family:var(--font-d);font-size:11px;font-weight:700;color:var(--teal2);letter-spacing:.12em;">FREE · COMPLETELY FREE TO JOIN</div>
+      </div>
+
+      <!-- SIGNUP REWARD -->
+      <div class="card" style="margin-bottom:1rem;border-left:3px solid var(--teal);">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="font-size:36px;flex-shrink:0;">🏁</div>
+          <div style="flex:1;">
+            <div style="font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--text);letter-spacing:.06em;margin-bottom:4px;">SIGNUP REWARD <span style="font-size:11px;color:var(--muted2);font-weight:400;">— First 50 to sign up</span></div>
+            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--teal2);">0.1888 $ORI <span style="font-size:12px;color:var(--muted);">each</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LUCKY DRAWS -->
+      <div class="card" style="margin-bottom:1rem;border-left:3px solid var(--teal);">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="font-size:36px;flex-shrink:0;">🎰</div>
+          <div style="flex:1;">
+            <div style="font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--text);letter-spacing:.06em;margin-bottom:4px;">LUCKY DRAWS <span style="font-size:11px;color:var(--muted2);font-weight:400;">— 3 winners × 5 rounds</span></div>
+            <div style="font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--teal2);">0.1888 $ORI <span style="font-size:12px;color:var(--muted);">each</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEADERBOARD PRIZES -->
+      <div class="card" style="margin-bottom:1rem;border-left:3px solid var(--gold);">
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <div style="font-size:36px;flex-shrink:0;">🏆</div>
+          <div style="flex:1;">
+            <div style="font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.06em;margin-bottom:12px;">LEADERBOARD PRIZES</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:18px;">🥇</span>
+                <span style="font-size:13px;color:var(--text);font-weight:400;flex:1;">1st Place</span>
+                <span style="font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--gold);">6.8888 $ORI</span>
+                <span style="font-size:11px;color:var(--muted2);">(~$379–$393)</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:18px;">🥈</span>
+                <span style="font-size:13px;color:var(--text);font-weight:400;flex:1;">2nd Place</span>
+                <span style="font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--gold);">3.8888 $ORI</span>
+                <span style="font-size:11px;color:var(--muted2);">(~$214–$222)</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:18px;">🥉</span>
+                <span style="font-size:13px;color:var(--text);font-weight:400;flex:1;">3rd Place</span>
+                <span style="font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--gold);">1.8888 $ORI</span>
+                <span style="font-size:11px;color:var(--muted2);">(~$104–$108)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BONUS PRIZES -->
+      <div class="card" style="margin-bottom:1rem;border-left:3px solid #c084fc;">
+        <div style="display:flex;align-items:flex-start;gap:14px;">
+          <div style="font-size:36px;flex-shrink:0;">⭐</div>
+          <div style="flex:1;">
+            <div style="font-family:var(--font-d);font-size:13px;font-weight:700;color:#c084fc;letter-spacing:.06em;margin-bottom:4px;">BONUS PRIZES</div>
+            <div style="font-size:11px;color:var(--muted2);margin-bottom:12px;font-weight:300;">Top 3 members with most invitations</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:18px;">🥇</span>
+                <span style="font-size:13px;color:var(--text);font-weight:400;flex:1;">1st</span>
+                <span style="font-family:var(--font-d);font-size:16px;font-weight:700;color:#c084fc;">5.8888 $ORI</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:18px;">🥈</span>
+                <span style="font-size:13px;color:var(--text);font-weight:400;flex:1;">2nd</span>
+                <span style="font-family:var(--font-d);font-size:16px;font-weight:700;color:#c084fc;">3.8888 $ORI</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:18px;">🥉</span>
+                <span style="font-size:13px;color:var(--text);font-weight:400;flex:1;">3rd</span>
+                <span style="font-family:var(--font-d);font-size:16px;font-weight:700;color:#c084fc;">1.8888 $ORI</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER NOTE -->
+      <div style="text-align:center;padding:1rem;font-size:12px;color:var(--muted2);font-weight:300;line-height:1.8;">
+        Prizes paid in $ORI · Free to participate<br>
+        <span style="color:var(--muted2);font-size:11px;">Signup reward: first 50 participants who complete registration and make at least one prediction</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="tab-leaderboard" class="section" style="display:none;">
+    <div class="s-hero">
+      <div class="s-title">Community <span class="accent">Leaderboard</span></div>
+      <div class="s-desc">Live standings across all Orizon SG community members.</div>
+    </div>
+    <div id="user-bar-leaderboard"></div>
+    <div id="lb-content" class="card"><div class="loading">Loading standings...</div></div>
+    <button class="save-btn" onclick="renderLeaderboard()" style="margin-top:8px;">Refresh</button>
+  </div>
+
+  <!-- SCORING -->
+  <div id="tab-scoring" class="section" style="display:none;">
+    <div class="s-hero">
+      <div class="s-title">Scoring <span class="accent">System</span></div>
+      <div class="s-desc">How points are awarded across each prediction category.</div>
+    </div>
+    <div class="scoring-grid">
+      <div class="score-card">
+        <div class="score-icon">⚽</div>
+        <div class="score-pts">2 pts</div>
+        <div class="score-label">Group Stage</div>
+        <div class="score-desc">Per correct match result · 48 matches · max 96 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">📊</div>
+        <div class="score-pts">3 / 2 pts</div>
+        <div class="score-label">Group Table</div>
+        <div class="score-desc">3 pts for correct 1st place · 2 pts for 2nd–4th · max 108 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">⚔️</div>
+        <div class="score-pts">4 pts</div>
+        <div class="score-label">Round of 32</div>
+        <div class="score-desc">Per advancing team · 16 picks · max 64 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">🎯</div>
+        <div class="score-pts">6 pts</div>
+        <div class="score-label">Round of 16</div>
+        <div class="score-desc">Per advancing team · 8 picks · max 48 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">🔥</div>
+        <div class="score-pts">8 pts</div>
+        <div class="score-label">Quarter & Semi-Finals</div>
+        <div class="score-desc">Per advancing team · QF 4 picks · SF 2 picks · max 48 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">🥉</div>
+        <div class="score-pts">4 pts</div>
+        <div class="score-label">3rd Place Match</div>
+        <div class="score-desc">Correct 3rd place team · max 4 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">🏆</div>
+        <div class="score-pts">10 pts</div>
+        <div class="score-label">Final</div>
+        <div class="score-desc">Correct finalist winner · max 10 pts</div>
+      </div>
+      <div class="score-card highlight">
+        <div class="score-icon">👑</div>
+        <div class="score-pts">25 pts</div>
+        <div class="score-label">Champion</div>
+        <div class="score-desc">Correct World Cup 2026 winner · max 25 pts</div>
+      </div>
+      <div class="score-card">
+        <div class="score-icon">🎖️</div>
+        <div class="score-pts">5 pts</div>
+        <div class="score-label">Awards (×3)</div>
+        <div class="score-desc">Golden Glove · Golden Boot · Top Assister · max 15 pts</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1.5rem;max-width:560px;">
+      <div class="card-title">Maximum Points Breakdown</div>
+      <div class="deadline-item"><span class="dl-label">Group Stage (48 × 2)</span><span class="dl-date">96 pts · 23%</span></div>
+      <div class="deadline-item"><span class="dl-label">Group Table (subtotal)</span><span class="dl-date">108 pts · 25.8%</span></div>
+      <div class="deadline-item"><span class="dl-label">Knockout Stage (subtotal)</span><span class="dl-date">174 pts · 41.6%</span></div>
+      <div class="deadline-item"><span class="dl-label">Champion (1 × 25)</span><span class="dl-date">25 pts · 6%</span></div>
+      <div class="deadline-item"><span class="dl-label">Awards (3 × 5)</span><span class="dl-date">15 pts · 3.6%</span></div>
+      <div class="deadline-item" style="border-top:1px solid rgba(0,200,180,0.2);margin-top:4px;padding-top:12px;"><span class="dl-label" style="font-weight:600;color:var(--text);">Total Maximum</span><span class="dl-date" style="color:var(--teal2);font-size:13px;">418 pts</span></div>
+    </div>
+    <div class="card" style="margin-top:1.5rem;max-width:560px;">
+      <div class="card-title">Deadlines</div>
+      <div class="deadline-item"><span class="dl-label">Group Stage, Group Table & Champion picks</span><span class="dl-date">12 Jun · 02:55 SGT</span></div>
+      <div class="deadline-item"><span class="dl-label">Knockout Stage predictions</span><span class="dl-date">Opens per round</span></div>
+    </div>
+  </div>
+
+  <!-- PRIZES -->
+  <div id="tab-prizes" class="section" style="display:none;">
+    <div class="s-hero">
+      <div class="s-title">Prize <span class="accent">Pool</span></div>
+      <div class="s-desc">World Cup 2026 Predictor · Completely free to join</div>
     </div>
     <div style="max-width:660px;">
       <div class="card" style="margin-bottom:1rem;">
