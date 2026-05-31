@@ -1315,7 +1315,9 @@ function getGroupMatches(){
 let wallet=null,isAdmin=false,adminWallets=[],username=null;
 let predictions={groups:{},table:{},knockout:{},champion:'',awards:{glove:{player:'',team:''},boot:{player:'',team:''},assist:{player:'',team:''}}};
 let results={};
-let sheetsUrl=localStorage.getItem('orizon_sheets_url')||'https://orizon-sheets-proxy.orizonsg.workers.dev';
+// Hardcoded Worker URL — localStorage cannot override this
+const SHEETS_WORKER='https://orizon-sheets-proxy.orizonsg.workers.dev';
+let sheetsUrl=SHEETS_WORKER; // always use the Worker
 
 // ══════════════════ WALLET ══════════════════
 async function toggleWallet(){wallet?disconnectWallet():await connectWallet();}
@@ -1440,26 +1442,33 @@ async function sheetsGet(sheet,key){
   }catch{return localGet(sheet,key);}
 }
 async function sheetsSet(sheet,key,value){
-  if(!sheetsUrl){localSet(sheet,key,value);return true;}
   try{
-    // POST via Cloudflare Worker (handles CORS + large payloads)
-    await fetch(sheetsUrl,{
+    const r=await fetch(SHEETS_WORKER,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'save',sheet,key,value})
     });
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    localSet(sheet,key,value);
     return true;
-  }catch(e){localSet(sheet,key,value);return false;}
+  }catch(e){
+    console.warn('sheetsSet failed',sheet,e.message);
+    localSet(sheet,key,value);
+    return false;
+  }
 }
 async function sheetsAll(sheet){
-  if(!sheetsUrl)return localAll(sheet);
   try{
-    const r=await fetch(sheetsUrl+'?action=all&sheet='+sheet);
+    const r=await fetch(SHEETS_WORKER+'?action=all&sheet='+sheet);
+    if(!r.ok)throw new Error('HTTP '+r.status);
     const d=await r.json();
     const out={};
     for(const k in d){try{out[k]=JSON.parse(d[k]);}catch{out[k]=d[k];}}
     return out;
-  }catch{return localAll(sheet);}
+  }catch(e){
+    console.warn('sheetsAll failed for',sheet,e.message);
+    return null; // return null so callers can detect failure
+  }
 }
 function localGet(sheet,key){
   const v=localStorage.getItem('ori_'+sheet+'_'+key);
@@ -1786,6 +1795,10 @@ async function renderLeaderboard(){
   document.getElementById('user-bar-leaderboard').innerHTML=userBarHTML();
   const allUsers=await sheetsAll('users');
   const allPreds=await sheetsAll('predictions');
+  if(!allUsers){
+    el.innerHTML='<div class="card" style="text-align:center;padding:2rem;color:var(--red);">⚠ Could not reach the server. Check your internet connection and try again.</div>';
+    return;
+  }
   const rows=[];
   for(const addr in allUsers){
     const p=allPreds[addr]||{};
