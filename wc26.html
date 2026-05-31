@@ -926,19 +926,19 @@ body::-webkit-scrollbar{display:none;}
               <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:var(--gold);font-weight:700;">$88</td>
             </tr>
             <tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(168,85,247,0.04);">
-              <td style="padding:10px 10px;color:var(--text);font-weight:400;">⭐ Top Recruiter 1st <span style="font-size:10px;color:var(--muted2);">(SG only)</span></td>
+              <td style="padding:10px 10px;color:var(--text);font-weight:400;">⭐ Top Inviter 1st <span style="font-size:10px;color:var(--muted2);">(SG only)</span></td>
               <td style="padding:10px;text-align:center;color:var(--muted);">1</td>
               <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:#c084fc;font-weight:700;">3 $ORI</td>
               <td style="padding:10px;text-align:right;color:var(--muted2);">—</td>
             </tr>
             <tr style="border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(168,85,247,0.02);">
-              <td style="padding:10px 10px;color:var(--text);font-weight:400;">⭐ Top Recruiter 2nd <span style="font-size:10px;color:var(--muted2);">(SG only)</span></td>
+              <td style="padding:10px 10px;color:var(--text);font-weight:400;">⭐ Top Inviter 2nd <span style="font-size:10px;color:var(--muted2);">(SG only)</span></td>
               <td style="padding:10px;text-align:center;color:var(--muted);">1</td>
               <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:#c084fc;font-weight:700;">2 $ORI</td>
               <td style="padding:10px;text-align:right;color:var(--muted2);">—</td>
             </tr>
             <tr>
-              <td style="padding:10px 10px;color:var(--text);font-weight:400;">⭐ Top Recruiter 3rd <span style="font-size:10px;color:var(--muted2);">(SG only)</span></td>
+              <td style="padding:10px 10px;color:var(--text);font-weight:400;">⭐ Top Inviter 3rd <span style="font-size:10px;color:var(--muted2);">(SG only)</span></td>
               <td style="padding:10px;text-align:center;color:var(--muted);">1</td>
               <td style="padding:10px;text-align:right;font-family:var(--font-d);font-size:12px;color:#c084fc;font-weight:700;">1 $ORI</td>
               <td style="padding:10px;text-align:right;color:var(--muted2);">—</td>
@@ -951,7 +951,7 @@ body::-webkit-scrollbar{display:none;}
         <p style="margin-bottom:6px;">💰 Cash prizes are in SGD. $ORI prizes are in $ORI tokens at the prevailing market rate.</p>
         <p style="margin-bottom:6px;">🏁 Signup reward is given to the first 50 participants who complete registration and make at least one prediction.</p>
         <p style="margin-bottom:6px;">🎰 Lucky draws are held across 5 rounds throughout the tournament — 3 winners per round.</p>
-        <p>⭐ Recruiter prizes are for Orizon SG community members only. Tracked via Orizon referral system.</p>
+        <p>⭐ Invitation prizes are for Orizon SG community members only. Tracked via Orizon referral system.</p>
       </div>
     </div>
   </div>
@@ -1377,12 +1377,23 @@ async function onConnected(){
   document.getElementById('admin-tab').style.display=isAdmin?'block':'none';
   await loadPredictions();
   // Check if user already has a username
+  // Also check localStorage for username as fallback
+  const localUsername = localStorage.getItem('orizon_username_'+wallet);
   const savedUser=await sheetsGet('users',wallet);
   if(savedUser&&savedUser.username){
     username=savedUser.username;
+    localStorage.setItem('orizon_username_'+wallet, username);
+    // Always re-save on connect to ensure they appear in sheets
+    sheetsSet('users',wallet,{wallet,username,ts:Date.now()});
+    showMainApp();
+  } else if(localUsername){
+    // Username in localStorage but not in sheets — re-register them
+    username=localUsername;
+    await sheetsSet('users',wallet,{wallet,username,ts:Date.now()});
+    showToast('Welcome back, '+username+'!');
     showMainApp();
   } else {
-    // Show username modal
+    // Truly new user — show username modal
     document.getElementById('modal-wallet-addr').textContent='Wallet: '+wallet.slice(0,6)+'...'+wallet.slice(-4);
     document.getElementById('username-modal').style.display='flex';
     setTimeout(()=>document.getElementById('username-input').focus(),100);
@@ -1401,7 +1412,9 @@ async function submitUsername(){
   if(val.length<3||val.length>20){err.style.display='block';return;}
   err.style.display='none';
   username=val;
-  await sheetsSet('users',wallet,{wallet,username,ts:Date.now()});
+  localStorage.setItem('orizon_username_'+wallet, username);
+  const saved = await sheetsSet('users',wallet,{wallet,username,ts:Date.now()});
+  if(!saved) showToast('⚠ Could not connect to server — picks saved locally only','err');
   showMainApp();
   showToast('Welcome, '+username+'!');
 }
