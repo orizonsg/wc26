@@ -242,22 +242,24 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
 
   <div class="card">
     <div class="card-title">Your Wallet</div>
-    <div class="field-grid">
-      <div class="field">
-        <label>ORI Staked (amount) <span class="info-icon" title="Number of ORI tokens you have staked.">?</span></label>
-        <input type="number" id="oriAmount" placeholder="e.g. 1000" min="0" step="0.0001" oninput="onOriAmountChange()">
-        <div class="field-hint">Enter number of ORI staked</div>
-      </div>
-      <div class="field">
-        <label>Interest Earned <span class="info-icon" title="ORI interest earned on top of your stake base.">?</span></label>
-        <input type="number" id="myInterest" placeholder="e.g. 25.3" min="0" step="0.0001" oninput="onInterestChange()">
-        <div class="field-hint">Earned on top of original stake base</div>
-      </div>
-      <div class="field">
-        <label>Computing Power (Qmax) <span class="info-icon" title="Qmax = stake base + interest earned.">?</span></label>
-        <input type="number" id="myQmax" placeholder="Auto-calculated" min="0" step="0.0001" oninput="onQmaxChange()">
-        <div class="field-hint">Auto-calculated; override if needed</div>
-      </div>
+    <!-- Single shared interest for own wallet -->
+    <div class="field" style="max-width:280px;margin-bottom:.85rem">
+      <label>Total Interest Earned ($ORI)</label>
+      <input type="number" id="myInterest" placeholder="e.g. 25.3" min="0" step="0.0001" oninput="onInterestChange()">
+      <div class="field-hint">Total interest balance shown on orizon.vip</div>
+    </div>
+    <!-- Multiple stake positions -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Stake Positions</span>
+      <button type="button" class="secondary-btn" style="padding:.25rem .65rem;font-size:11px" onclick="addOwnStake()">+ Add Position</button>
+    </div>
+    <div id="ownStakesWrap"></div>
+    <!-- Hidden inputs kept for K/N calc compatibility -->
+    <input type="hidden" id="oriAmount">
+    <input type="hidden" id="myQmax">
+    <div style="margin-top:.6rem;padding:.5rem .85rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:11px;display:flex;gap:1.5rem;flex-wrap:wrap">
+      <span style="color:var(--text3)">Total Base: <span class="mono" id="ownTotalBase" style="color:var(--teal)">0.0000</span> $ORI</span>
+      <span style="color:var(--text3)">Qmax (Base + Interest): <span class="mono" id="ownQmaxDisplay" style="color:var(--teal)">0.0000</span> $ORI</span>
     </div>
   </div>
 
@@ -467,6 +469,7 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
 const LS = 'orizon_state_v3';
 let state = {
   own:{ oriAmount:0, myInterest:0, qmax:0 },
+  ownStakes:[],
   members:[],
   rewards:[],
   otherEarnings:[],
@@ -476,6 +479,7 @@ let state = {
 let members       = [];
 let rewards       = [];
 let otherEarnings = [];
+let ownStakes     = [];
 let livePrice     = 0;
 let sgdRate       = 0;
 let modalMode     = 'add';
@@ -522,6 +526,7 @@ function saveState(){
   state.members       = members;
   state.rewards       = rewards;
   state.otherEarnings = otherEarnings;
+  state.ownStakes     = ownStakes;
   localStorage.setItem(LS, JSON.stringify(state));
   if(state.syncUrl) syncPush(true);
 }
@@ -530,9 +535,9 @@ function loadState(){
   members       = Array.isArray(state.members)       ? state.members       : [];
   rewards       = Array.isArray(state.rewards)       ? state.rewards       : [];
   otherEarnings = Array.isArray(state.otherEarnings) ? state.otherEarnings : [];
-  if(state.own.oriAmount)  $('oriAmount').value  = state.own.oriAmount;
+  ownStakes     = Array.isArray(state.ownStakes)     ? state.ownStakes     : [];
+  if(!ownStakes.length) ownStakes=[{tier:'360 Day',base:0,startDate:'',maturity:''}];
   if(state.own.myInterest) $('myInterest').value = state.own.myInterest;
-  if(state.own.qmax)       $('myQmax').value     = state.own.qmax;
   $('rate360').value   = state.rates['360 Day'];
   $('rate180').value   = state.rates['180 Day'];
   $('rate90').value    = state.rates['90 Day'];
@@ -540,6 +545,7 @@ function loadState(){
   if(state.syncUrl) $('syncUrl').value = state.syncUrl;
   $('rwDate').value  = todayLocal();
   $('oeDate').value  = todayLocal();
+  renderOwnStakes();
   renderAll();
 }
 function saveRates(){
@@ -563,23 +569,82 @@ function switchTab(id,btn){
 // ═══════════════════════════════════════════════════════════════════════════════
 // ORI INPUT HANDLERS
 // ═══════════════════════════════════════════════════════════════════════════════
-function onOriAmountChange(){
-  const base=parseFloat($('oriAmount').value)||0;
-  const int =parseFloat($('myInterest').value)||0;
-  $('myQmax').value=base+int||'';
-  state.own.oriAmount=base; state.own.myInterest=int; state.own.qmax=base+int;
-  calc(); saveState();
-}
 function onInterestChange(){
-  const base=parseFloat($('oriAmount').value)||0;
-  const int =parseFloat($('myInterest').value)||0;
-  $('myQmax').value=base+int||'';
-  state.own.myInterest=int; state.own.qmax=base+int;
+  recalcOwnQmax();
+}
+function onQmaxChange(){ /* kept for any legacy refs */ recalcOwnQmax(); }
+function onOriAmountChange(){ /* kept for any legacy refs */ recalcOwnQmax(); }
+
+function recalcOwnQmax(){
+  const int  = parseFloat($('myInterest').value)||0;
+  const base = ownStakes.reduce((s,p)=>s+(p.base||0), 0);
+  const qmax = base + int;
+  $('oriAmount').value = base;   // hidden field used for K calc
+  $('myQmax').value    = qmax;   // hidden field used for Qmax
+  const ob = $('ownTotalBase');  if(ob) ob.textContent = fmtN(base,4);
+  const oq = $('ownQmaxDisplay');if(oq) oq.textContent = fmtN(qmax,4);
+  state.own.oriAmount  = base;
+  state.own.myInterest = int;
+  state.own.qmax       = qmax;
   calc(); saveState();
 }
-function onQmaxChange(){
-  state.own.qmax=parseFloat($('myQmax').value)||0;
-  calc(); saveState();
+
+// ── Own wallet stake positions ────────────────────────────────────────────────
+const TIERS = ['360 Day','180 Day','90 Day','Flexi'];
+
+function ownStakeRowHtml(s, idx){
+  const days = s.maturity ? daysBetween(todayLocal(), s.maturity) : null;
+  const mc   = matCls(days);
+  return `<div class="stake-row ${mc.rowCls}" id="osr_${idx}">
+    <div class="field"><label>Tier</label>
+      <select onchange="ownStakes[${idx}].tier=this.value;autoOwnMaturity(${idx})">
+        ${TIERS.map(t=>`<option${s.tier===t?' selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Base ($ORI)</label>
+      <input type="number" value="${s.base||''}" placeholder="0" min="0" step="0.0001"
+        oninput="ownStakes[${idx}].base=parseFloat(this.value)||0;recalcOwnQmax()">
+    </div>
+    <div class="field"><label>Start Date</label>
+      <input type="date" value="${s.startDate||''}"
+        oninput="ownStakes[${idx}].startDate=this.value;autoOwnMaturity(${idx})">
+    </div>
+    <div class="field"><label>Maturity <span style="color:var(--text3);font-size:9px">(auto)</span></label>
+      <input type="date" value="${s.maturity||''}"
+        oninput="ownStakes[${idx}].maturity=this.value;renderOwnStakes()">
+    </div>
+    <button type="button" class="rm-btn" style="margin-bottom:.2rem"
+      onclick="removeOwnStake(${idx})">×</button>
+  </div>`;
+}
+
+function autoOwnMaturity(idx){
+  const s=ownStakes[idx];
+  if(!s.startDate) return;
+  const d=new Date(s.startDate);
+  d.setDate(d.getDate()+(TIER_DAYS[s.tier]??0));
+  s.maturity=d.toISOString().slice(0,10);
+  renderOwnStakes();
+}
+
+function renderOwnStakes(){
+  const wrap=$('ownStakesWrap');
+  if(!wrap) return;
+  wrap.innerHTML=ownStakes.map((s,i)=>ownStakeRowHtml(s,i)).join('');
+  recalcOwnQmax();
+}
+
+function addOwnStake(){
+  ownStakes.push({tier:'360 Day',base:0,startDate:todayLocal(),maturity:''});
+  autoOwnMaturity(ownStakes.length-1);
+  saveState();
+}
+
+function removeOwnStake(idx){
+  if(ownStakes.length<=1){ alert('At least one stake position required.'); return; }
+  ownStakes.splice(idx,1);
+  renderOwnStakes();
+  saveState();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -680,20 +745,26 @@ function matCls(days){
 function renderTracker(){
   const tbody=$('trackerBody');
   tbody.innerHTML='';
-  // Own wallet — single row (no maturity info since it's free-form)
-  const base=parseFloat($('oriAmount').value)||0;
-  const int =parseFloat($('myInterest').value)||0;
-  const Qmax=parseFloat($('myQmax').value)||0;
-  const ownTr=document.createElement('tr');
-  ownTr.innerHTML=
-    '<td><span class="pill you">You</span></td>'
-   +'<td><strong>My Wallet</strong></td>'
-   +'<td>—</td>'
-   +'<td><span class="tier-badge">Custom</span></td>'
-   +'<td class="mono">'+fmtN(base,4)+'</td>'
-   +'<td class="mono">'+fmtN(int,4)+'</td>'
-   +'<td>—</td><td>—</td><td>—</td><td>—</td><td></td>';
-  tbody.appendChild(ownTr);
+  // Own wallet — one row per stake position
+  const ownInt=parseFloat($('myInterest').value)||0;
+  ownStakes.forEach((sp,si)=>{
+    const days=sp.maturity?daysBetween(todayLocal(),sp.maturity):null;
+    const mc=matCls(days);
+    const tr=document.createElement('tr');
+    tr.className=mc.rowCls;
+    tr.innerHTML=
+      '<td>'+(si===0?'<span class="pill you">You</span>':'')+'</td>'
+     +'<td>'+(si===0?'<strong>My Wallet</strong>':'<span style="color:var(--text3);font-size:10px">└ pos '+(si+1)+'</span>')+'</td>'
+     +'<td>—</td>'
+     +'<td><span class="tier-badge">'+esc(sp.tier||'360 Day')+'</span></td>'
+     +'<td class="mono">'+fmtN(sp.base||0,4)+'</td>'
+     +'<td class="mono">'+(si===0?fmtN(ownInt,4):'—')+'</td>'
+     +'<td class="mono">'+(sp.startDate||'—')+'</td>'
+     +'<td class="mono">'+(sp.maturity||'—')+'</td>'
+     +'<td class="mono '+mc.cls+'">'+mc.str+'</td>'
+     +'<td>—</td><td></td>';
+    tbody.appendChild(tr);
+  });
 
   members.forEach((m,i)=>{
     // Expand stake positions if they exist, otherwise single row
@@ -737,10 +808,18 @@ function renderPersonalTab(){
   tbody.innerHTML='';
   const rows=[];
 
-  // Primary wallet row
-  const base=parseFloat($('oriAmount').value)||0;
-  const int =parseFloat($('myInterest').value)||0;
-  if(base||int) rows.push({label:'My Wallet',tier:'Custom',base,interest:int,startDate:'',maturity:''});
+  // Primary wallet — one row per stake position
+  const ownInt=parseFloat($('myInterest').value)||0;
+  ownStakes.forEach((sp,si)=>{
+    rows.push({
+      label:     'My Wallet'+(ownStakes.length>1?' pos '+(si+1):''),
+      tier:      sp.tier||'360 Day',
+      base:      sp.base||0,
+      interest:  si===0?ownInt:0,
+      startDate: sp.startDate||'',
+      maturity:  sp.maturity||''
+    });
+  });
 
   // Members flagged "mine" — expand stake positions
   members.forEach(m=>{
