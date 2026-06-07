@@ -1107,18 +1107,42 @@ async function syncPush(silent=false){
   const url=($('syncUrl')&&$('syncUrl').value.trim())||state.syncUrl;
   if(!url){ if(!silent) $('syncStatus').textContent='No URL set.'; return; }
   try{
-    await fetch(url,{method:'POST',body:JSON.stringify(state),headers:{'Content-Type':'application/json'}});
+    // Apps Script expects { action:'push', data:..., updatedAt:... }
+    // mode:'no-cors' is required for POST to Apps Script from browser
+    // (response will be opaque — we cant read it, but the write still succeeds)
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'push',
+        data: state,
+        updatedAt: new Date().toISOString()
+      })
+    });
     if(!silent) $('syncStatus').textContent='Pushed at '+new Date().toLocaleTimeString();
   }catch(e){ if(!silent) $('syncStatus').textContent='Push failed: '+e.message; }
 }
 async function syncPull(){
-  const url=$('syncUrl').value.trim();
+  const url=($('syncUrl')&&$('syncUrl').value.trim())||state.syncUrl;
   if(!url){ $('syncStatus').textContent='No URL set.'; return; }
   try{
-    const res=await fetch(url); const data=await res.json();
-    Object.assign(state,data); members=state.members||[]; rewards=state.rewards||[]; otherEarnings=state.otherEarnings||[];
-    localStorage.setItem(LS,JSON.stringify(state)); loadState();
-    $('syncStatus').textContent='Pulled at '+new Date().toLocaleTimeString();
+    // Apps Script GET with ?action=pull returns JSON directly
+    const res  = await fetch(url+'?action=pull');
+    const json = await res.json();
+    if(!json.ok){ $('syncStatus').textContent='Pull failed: '+(json.msg||'unknown error'); return; }
+    const pulled = json.data;
+    if(!pulled){ $('syncStatus').textContent='No data in cloud yet.'; return; }
+    // Merge pulled state
+    Object.assign(state, pulled);
+    members       = Array.isArray(state.members)       ? state.members       : [];
+    rewards       = Array.isArray(state.rewards)       ? state.rewards       : [];
+    otherEarnings = Array.isArray(state.otherEarnings) ? state.otherEarnings : [];
+    state.syncUrl = url; // preserve URL
+    localStorage.setItem(LS, JSON.stringify(state));
+    loadState();
+    $('syncStatus').textContent='Pulled at '+new Date().toLocaleTimeString()+
+      (json.updatedAt?' (saved '+new Date(json.updatedAt).toLocaleString()+')':'');
   }catch(e){ $('syncStatus').textContent='Pull failed: '+e.message; }
 }
 
