@@ -440,10 +440,10 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
   <div class="card">
     <div class="card-title">Tier Growth Rates</div>
     <div class="field-grid">
-      <div class="field"><label>360 Day (% / day)</label><input type="number" id="rate360" step="0.0001" oninput="saveRates();calc()"></div>
-      <div class="field"><label>180 Day (% / day)</label><input type="number" id="rate180" step="0.0001" oninput="saveRates();calc()"></div>
-      <div class="field"><label>90 Day (% / day)</label><input type="number" id="rate90" step="0.0001" oninput="saveRates();calc()"></div>
-      <div class="field"><label>Flexi (% / day)</label><input type="number" id="rateFlexi" step="0.0001" oninput="saveRates();calc()"></div>
+      <div class="field"><label>360 Day (% / rebase)</label><input type="number" id="rate360" step="0.0001" oninput="saveRates();calc()"></div>
+      <div class="field"><label>180 Day (% / rebase)</label><input type="number" id="rate180" step="0.0001" oninput="saveRates();calc()"></div>
+      <div class="field"><label>90 Day (% / rebase)</label><input type="number" id="rate90" step="0.0001" oninput="saveRates();calc()"></div>
+      <div class="field"><label>Flexi (% / rebase)</label><input type="number" id="rateFlexi" step="0.0001" oninput="saveRates();calc()"></div>
     </div>
   </div>
   <div class="card">
@@ -506,13 +506,18 @@ const daysBetween = (a,b) => {
   if(!a||!b) return null;
   return Math.round((new Date(b)-new Date(a))/86400000);
 };
-const growthRate = tier => (state.rates[tier]||0)/100;
+const REBASE_INTERVAL_MINS = 216;           // 3h 36min per rebase
+const REBASES_PER_DAY = 1440 / REBASE_INTERVAL_MINS; // = 6.6667
+
+const growthRate = tier => (state.rates[tier]||0)/100; // rate per single rebase
 const projectedBalance = m => {
   const base = parseFloat(m.base)||0;
   const int  = parseFloat(m.interest)||0;
   const days = m.lastUpdated ? daysBetween(m.lastUpdated, todayLocal()) : 0;
   const r    = growthRate(m.tier||'360 Day');
-  return (base+int) * Math.pow(1+r, Math.max(0,days||0));
+  // Compound per rebase: (1 + ratePerRebase)^(rebasesPerDay × days)
+  const totalRebases = REBASES_PER_DAY * Math.max(0, days||0);
+  return (base+int) * Math.pow(1+r, totalRebases);
 };
 const totalStakeBase = m => {
   if(m.stakes && m.stakes.length) return m.stakes.reduce((s,p)=>s+(p.base||0),0);
