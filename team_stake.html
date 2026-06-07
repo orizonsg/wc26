@@ -12,6 +12,9 @@
   --radius:10px;--shadow:0 2px 16px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box;margin:0;padding:0}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
 body{background:var(--bg);color:var(--text1);font-family:var(--sans);font-size:13px;min-height:100vh}
 /* ── Header ── */
 header{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
@@ -70,11 +73,6 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1rem}
 .yield-big{font-size:42px;font-family:var(--mono);font-weight:700;color:var(--teal)}
 .yield-sub{font-size:12px;color:var(--text3);margin-top:.35rem}
 /* ── N/K bar ── */
-.nk-bar{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem 1.25rem}
-.nk-item{display:flex;align-items:center;gap:.5rem}
-.nk-label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)}
-.nk-val{font-family:var(--mono);font-size:13px;color:var(--text1);font-weight:600}
-.nk-tag{font-size:10px;padding:2px 7px;border-radius:4px;font-family:var(--mono)}
 .tag-good{background:rgba(62,207,126,.12);color:#3ecf7e}
 .tag-warn{background:rgba(240,180,41,.12);color:var(--gold)}
 .tag-info{background:rgba(0,212,180,.12);color:var(--teal)}
@@ -97,6 +95,14 @@ td{padding:.45rem .75rem;vertical-align:middle}
 .mat-soon{color:var(--gold)}
 .mat-urgent{color:var(--red)}
 .mat-overdue{color:var(--red);text-decoration:line-through}
+/* row highlights */
+tr.row-soon td{background:rgba(240,180,41,.05)!important}
+tr.row-urgent td{background:rgba(224,82,82,.06)!important}
+/* stake position rows in modal */
+.stake-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:.4rem;align-items:end;margin-bottom:.5rem;padding:.5rem .6rem;background:var(--bg,#0a0d0f);border:1px solid var(--border);border-radius:6px}
+.stake-row.row-soon{border-color:rgba(240,180,41,.4);background:rgba(240,180,41,.04)}
+.stake-row.row-urgent{border-color:rgba(224,82,82,.4);background:rgba(224,82,82,.04)}
+.stake-row .field label{font-size:9px}
 /* ── Reward cards ── */
 .reward-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:.75rem}
 .reward-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;text-align:center}
@@ -153,14 +159,21 @@ td{padding:.45rem .75rem;vertical-align:middle}
     <div class="field-grid" style="grid-template-columns:1fr 1fr">
       <div class="field"><label>Name / Label</label><input id="m_name" placeholder="e.g. Alice"></div>
       <div class="field"><label>Wallet Address</label><input id="m_addr" placeholder="Partial or full"></div>
-      <div class="field"><label>Stake Base (ORI)</label><input type="number" id="m_base" placeholder="e.g. 500" min="0" step="0.0001"></div>
-      <div class="field"><label>Interest Earned (ORI)</label><input type="number" id="m_interest" placeholder="e.g. 25.3" min="0" step="0.0001"><div class="field-hint">Interest on top of stake base</div></div>
-      <div class="field"><label>Last Updated</label><input type="date" id="m_updated"></div>
-      <div class="field"><label>Tier</label>
-        <select id="m_tier">
-          <option>360 Day</option><option>180 Day</option><option>90 Day</option><option>Flexi</option>
-        </select>
+    </div>
+    <!-- Single shared interest (shown once per member, not per stake position) -->
+    <div class="field" style="margin-top:.75rem;max-width:280px">
+      <label>Interest Earned ($ORI) — total</label>
+      <input type="number" id="m_interest" placeholder="e.g. 25.3" min="0" step="0.0001">
+      <div class="field-hint">Total interest balance on orizon.vip — shared across all stake positions</div>
+    </div>
+    <!-- Multiple stake positions -->
+    <div style="margin-top:.85rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+        <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Stake Positions</span>
+        <button type="button" class="secondary-btn" style="padding:.25rem .65rem;font-size:11px" onclick="addStakeRow()">+ Add Position</button>
       </div>
+      <div id="stakeRowsWrap"></div>
+      <div class="field-hint" style="margin-top:.35rem">Each position: Tier, Base amount, Start Date → Maturity auto-calculated</div>
     </div>
     <div class="field" style="margin-top:.75rem"><label>Referral Level</label>
       <div class="level-grid" id="levelGrid"></div>
@@ -169,15 +182,21 @@ td{padding:.45rem .75rem;vertical-align:middle}
       <div class="field" id="uplineWrap" style="display:none">
         <label>Upline (who referred them)</label>
         <input id="m_upline" placeholder="e.g. Alice">
-        <div class="field-hint">Your Tier 1 member who brought this person in</div>
+        <div class="field-hint" id="uplineHint">Your Tier 1 member who brought this person in</div>
       </div>
       <div class="field" style="display:flex;align-items:center;gap:.6rem;padding-top:1.5rem">
         <input type="checkbox" id="m_mine" style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0">
         <label for="m_mine" style="cursor:pointer;font-size:12px;line-height:1.4">This wallet belongs to me <span style="color:var(--text3)">(Personal Stake)</span></label>
       </div>
     </div>
+    <!-- Inline delete confirm (avoids browser confirm() hiding modal) -->
+    <div id="deleteConfirmRow" style="display:none;align-items:center;gap:.5rem;padding:.6rem .85rem;background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.3);border-radius:6px;margin-top:.75rem;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--red);flex:1">Delete <strong id="deleteConfirmName"></strong>? This cannot be undone.</span>
+      <button class="rm-btn" onclick="confirmDelete()">Yes, Delete</button>
+      <button class="secondary-btn" onclick="cancelDelete()">Cancel</button>
+    </div>
     <div class="btn-row" id="modalBtns" style="justify-content:flex-end">
-      <button class="rm-btn" id="modalDelBtn" style="display:none;margin-right:auto" onclick="deleteCurrentMember()">Delete Member</button>
+      <button class="rm-btn" id="modalDelBtn" style="display:none;margin-right:auto" onclick="showDeleteConfirm()">Delete Member</button>
       <button class="secondary-btn" onclick="closeModal()">Cancel</button>
       <button class="save-btn" id="modalSaveBtn" onclick="saveModal()">Add Member</button>
     </div>
@@ -198,8 +217,9 @@ td{padding:.45rem .75rem;vertical-align:middle}
       <span class="price-chg" id="priceChg"></span>
     </div>
     <div class="price-chip">
-      <span class="price-label">USD/SGD</span>
+      <span class="price-label">1 USD =</span>
       <span class="price-val" id="sgdVal" style="color:var(--gold)">—</span>
+      <span class="price-label">SGD</span>
     </div>
   </div>
 </header>
@@ -241,27 +261,7 @@ td{padding:.45rem .75rem;vertical-align:middle}
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-title">Network Parameters</div>
-    <div class="field-grid">
-      <div class="field">
-        <label>Daily Rebase Output (ORI)</label>
-        <input type="number" id="rebase" placeholder="e.g. 100000" min="0" step="1000" oninput="calc()">
-        <div class="field-hint">Total network daily emission</div>
-      </div>
-      <div class="field">
-        <label>Total Network CV</label>
-        <input type="number" id="totalCV" placeholder="e.g. 5000000" min="0" step="10000" oninput="calc()">
-        <div class="field-hint">Sum of all addresses' contribution values</div>
-      </div>
-      <div class="field">
-        <label>My Known Reward (ORI/day) — optional</label>
-        <input type="number" id="actualReward" placeholder="Enter to back-calc" step="0.0001" oninput="calc()">
-        <div class="field-hint">Reverse-engineers network params</div>
-      </div>
-    </div>
-    <div class="backcalc-note" id="backCalcNote"></div>
-  </div>
+
 
   <div class="card">
     <div class="card-title">Team Members</div>
@@ -276,13 +276,9 @@ td{padding:.45rem .75rem;vertical-align:middle}
     <div class="btn-row"><button class="save-btn" onclick="openAddModal()">+ Add Team Member</button></div>
   </div>
 
-  <div class="nk-bar">
-    <div class="nk-item"><span class="nk-label">Weight N</span><span class="nk-val" id="nVal">—</span><span class="nk-tag tag-info" id="nTag">—</span></div>
-    <div style="flex:1"></div>
-    <div class="nk-item"><span class="nk-label">K (USD staked)</span><span class="nk-val" id="kVal">—</span></div>
-  </div>
 
   <div class="metrics-grid">
+    <div class="metric-card"><div class="m-label">Weight N</div><div class="m-val" id="nMetricVal">—</div><div class="m-sub" id="nMetricSub">N = 0.00001×K + 0.9</div></div>
     <div class="metric-card"><div class="m-label">Team Size</div><div class="m-val" id="teamSize">0</div><div class="m-sub">members across all levels</div></div>
     <div class="metric-card"><div class="m-label">ΣQi — Team Power</div><div class="m-val" id="sumQi">0</div><div class="m-sub">decay-weighted sum</div></div>
     <div class="metric-card"><div class="m-label">Balance Factor B</div><div class="m-val" id="bVal">0.0000</div><div class="m-sub" id="bPct">0% of max B</div><div class="m-bar"><div class="m-bar-fill" id="bBar" style="width:0%"></div></div></div>
@@ -290,9 +286,9 @@ td{padding:.45rem .75rem;vertical-align:middle}
   </div>
 
   <div class="yield-display">
-    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Estimated Daily Contribution Yield</div>
-    <div class="yield-big" id="yieldOri">0.0000</div>
-    <div class="yield-sub" id="yieldFiat">ORI / day · — USD · — SGD</div>
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Your Contribution Weight (M)</div>
+    <div class="yield-big" id="yieldOri">0.00</div>
+    <div class="yield-sub" id="yieldFiat">Weight M · higher = larger share of the daily reward pool</div>
   </div>
 
 </div>
@@ -351,9 +347,16 @@ td{padding:.45rem .75rem;vertical-align:middle}
 <div id="panel-tracker" class="panel">
   <div class="card">
     <div class="card-title">All Stakes — My Wallet + Team</div>
+    <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:.75rem;font-size:10px">
+      <span style="color:var(--text3)">Maturity:</span>
+      <span style="color:var(--teal)">● 15+ days</span>
+      <span style="color:var(--gold)">● 4–14 days (soon)</span>
+      <span style="color:var(--red)">● 0–3 days (urgent)</span>
+      <span style="color:var(--red);text-decoration:line-through">● overdue</span>
+    </div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>Type</th><th>Name</th><th>Address</th><th>Tier</th><th>Stake Base</th><th>Interest</th><th>Est. Power</th><th>Last Updated</th><th>Days Left</th><th>Level</th><th></th></tr></thead>
+        <thead><tr><th>Type</th><th>Name</th><th>Address</th><th>Tier</th><th>Stake Base ($ORI)</th><th>Interest ($ORI)</th><th>Start Date</th><th>Maturity</th><th>Days Left</th><th>Level</th><th></th></tr></thead>
         <tbody id="trackerBody"></tbody>
       </table>
     </div>
@@ -365,24 +368,54 @@ td{padding:.45rem .75rem;vertical-align:middle}
 ═══════════════════════════════════════════════════════════ -->
 <div id="panel-personal" class="panel">
   <div class="card">
-    <div class="card-title">My Wallets</div>
+    <div class="card-title">My $ORI Summary</div>
     <p style="font-size:11px;color:var(--text3);margin-bottom:.85rem">
-      Wallets marked <strong>"This wallet belongs to me"</strong> when adding a team member appear here.
-      Your primary wallet is always included. Edit members in the Team Members tab to update.
+      Your primary wallet plus any team members marked "This wallet belongs to me".
     </p>
-    <div class="ps-summary" id="psSummary">
-      <div class="ps-card"><h3>Total Stake Base</h3><div class="ps-big" id="psTotalBase">0.0000</div><div class="ps-sub" id="psTotalBaseFiat">— USD · — SGD</div></div>
-      <div class="ps-card"><h3>Total Est. Power</h3><div class="ps-big" id="psTotalPower">0.0000</div><div class="ps-sub">across all my wallets</div></div>
+    <div class="ps-summary" style="grid-template-columns:repeat(3,1fr)">
+      <div class="ps-card"><h3>Total Stake Base ($ORI)</h3><div class="ps-big" id="psTotalBase" style="color:var(--teal)">0.0000</div><div class="ps-sub" id="psTotalBaseFiat">— USD · — SGD</div></div>
+      <div class="ps-card"><h3>Total Interest Earned ($ORI)</h3><div class="ps-big" id="psTotalInterest" style="color:var(--gold)">0.0000</div><div class="ps-sub" id="psTotalInterestFiat">— USD · — SGD</div></div>
+      <div class="ps-card"><h3>Other $ORI Earned</h3><div class="ps-big" id="psTotalOther" style="color:#a78bfa">0.0000</div><div class="ps-sub" id="psTotalOtherFiat">— USD · — SGD</div></div>
+    </div>
+    <!-- Grand Total with USD + SGD -->
+    <div style="margin-top:.85rem;padding:.75rem 1.1rem;background:var(--surface2);border:1px solid var(--border2);border-radius:8px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+        <span style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Grand Total $ORI</span>
+        <span style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text1)" id="psGrandTotal">0.0000</span>
+      </div>
+      <div style="display:flex;gap:1.5rem;margin-top:.35rem;flex-wrap:wrap">
+        <span style="font-size:11px;font-family:var(--mono);color:var(--text3)" id="psGrandTotalUsd">— USD</span>
+        <span style="font-size:11px;font-family:var(--mono);color:var(--text3)" id="psGrandTotalSgd">— SGD</span>
+      </div>
     </div>
   </div>
+  <!-- Stake positions table -->
   <div class="card">
-    <div class="card-title">My Wallet Breakdown</div>
+    <div class="card-title">My Stake Positions</div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>Wallet</th><th>Address</th><th>Tier</th><th>Stake Base</th><th>Interest</th><th>Est. Power</th><th>Last Updated</th></tr></thead>
+        <thead><tr><th>Wallet</th><th>Tier</th><th>Stake Base ($ORI)</th><th>Interest ($ORI)</th><th>Start Date</th><th>Maturity</th><th>Days Left</th></tr></thead>
         <tbody id="personalBody"></tbody>
       </table>
       <div id="personalEmpty" style="text-align:center;padding:1.5rem;color:var(--text3);font-size:11px">No personal wallets flagged yet.</div>
+    </div>
+  </div>
+  <!-- Other earnings -->
+  <div class="card">
+    <div class="card-title">Other $ORI Earned</div>
+    <p style="font-size:11px;color:var(--text3);margin-bottom:.75rem">Log $ORI from other sources — airdrops, referral bonuses, trading, etc.</p>
+    <div class="field-grid">
+      <div class="field"><label>Date</label><input type="date" id="oeDate"></div>
+      <div class="field"><label>Amount ($ORI)</label><input type="number" id="oeAmount" placeholder="e.g. 5.0" step="0.0001" min="0"></div>
+      <div class="field"><label>Source / Note</label><input type="text" id="oeNote" placeholder="e.g. Airdrop, referral bonus"></div>
+    </div>
+    <div class="btn-row"><button class="save-btn" onclick="saveOtherEarning()">+ Add Earning</button></div>
+    <div class="tbl-wrap" style="margin-top:.85rem">
+      <table>
+        <thead><tr><th>Date</th><th>Amount ($ORI)</th><th>Source</th><th>USD Value</th><th></th></tr></thead>
+        <tbody id="oeBody"></tbody>
+      </table>
+      <div id="oeEmpty" style="text-align:center;padding:1rem;color:var(--text3);font-size:11px">No other earnings logged yet.</div>
     </div>
   </div>
 </div>
@@ -412,13 +445,16 @@ td{padding:.45rem .75rem;vertical-align:middle}
     </div>
   </div>
   <div class="card">
-    <div class="card-title">Sync Settings <span class="info-icon" title="Sync via Google Apps Script URL to share state across devices.">?</span></div>
-    <div class="field"><label>Apps Script URL</label><input id="syncUrl" placeholder="https://script.google.com/..."></div>
+    <div class="card-title">Sync Settings <span class="info-icon" title="Auto-pushes on every save when URL is set.">?</span></div>
+    <p style="font-size:11px;color:var(--text3);margin-bottom:.75rem">
+      Data is <strong style="color:var(--teal)">automatically pushed</strong> every time you save, once a URL is entered. Use <em>Pull from Cloud</em> on another device to get your latest data.
+    </p>
+    <div class="field"><label>Apps Script URL</label><input id="syncUrl" placeholder="https://script.google.com/..." oninput="state.syncUrl=this.value;localStorage.setItem(LS,JSON.stringify(state))"></div>
     <div class="btn-row">
       <button class="save-btn" onclick="syncPush()">Push to Cloud</button>
       <button class="secondary-btn" onclick="syncPull()">Pull from Cloud</button>
     </div>
-    <div class="sync-box" id="syncStatus">Not synced.</div>
+    <div class="sync-box" id="syncStatus">Not synced — enter URL above to enable auto-push.</div>
   </div>
 </div>
 
@@ -428,81 +464,82 @@ td{padding:.45rem .75rem;vertical-align:middle}
 // ═══════════════════════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════════════════════
-const LS = 'orizon_state_v2';
+const LS = 'orizon_state_v3';
 let state = {
-  own:{ oriAmount:0, myInterest:0, qmax:0, kUsd:0 },
-  inputs:{ rebase:0, totalCV:0, actualReward:0 },
+  own:{ oriAmount:0, myInterest:0, qmax:0 },
   members:[],
   rewards:[],
+  otherEarnings:[],
   rates:{ '360 Day':0.005, '180 Day':0.005, '90 Day':0.005, 'Flexi':0.003 },
   syncUrl:''
 };
-let members  = [];
-let rewards  = [];
-let livePrice  = 0;
-let sgdRate    = 0;
-let modalMode  = 'add';  // 'add' | 'edit'
-let editIndex  = -1;
-let modalLevel = 1;
+let members       = [];
+let rewards       = [];
+let otherEarnings = [];
+let livePrice     = 0;
+let sgdRate       = 0;
+let modalMode     = 'add';
+let editIndex     = -1;
+let modalLevel    = 1;
+let modalStakes   = []; // [{tier,base,startDate,maturity}]
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 const fmtN = (v,d=4) => Number(v||0).toFixed(d);
-const fmtC = (ori,sgd) => {
+const fmtC = ori => {
   const usd = ori * livePrice;
-  const s   = usd * (sgd||sgdRate);
+  const sgd = usd * sgdRate;
   const usdStr = livePrice ? '$'+usd.toFixed(2)+' USD' : '— USD';
-  const sgdStr = (sgd||sgdRate) ? 'S$'+s.toFixed(2)+' SGD' : '— SGD';
+  const sgdStr = sgdRate   ? 'S$'+sgd.toFixed(2)+' SGD' : '— SGD';
   return usdStr + ' · ' + sgdStr;
 };
 const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const addrShort = a => a ? (a.length>12 ? a.slice(0,6)+'…'+a.slice(-4) : a) : '—';
 const todayLocal = () => new Date().toISOString().slice(0,10);
 const daysBetween = (a,b) => {
-  if(!a||!b) return '';
-  const msDay=86400000;
-  return Math.round((new Date(b)-new Date(a))/msDay);
+  if(!a||!b) return null;
+  return Math.round((new Date(b)-new Date(a))/86400000);
 };
-const growthRate = tier => (state.rates[tier] || 0) / 100;
+const growthRate = tier => (state.rates[tier]||0)/100;
 const projectedBalance = m => {
   const base = parseFloat(m.base)||0;
   const int  = parseFloat(m.interest)||0;
   const days = m.lastUpdated ? daysBetween(m.lastUpdated, todayLocal()) : 0;
   const r    = growthRate(m.tier||'360 Day');
-  return (base + int) * Math.pow(1+r, Math.max(0,days||0));
+  return (base+int) * Math.pow(1+r, Math.max(0,days||0));
+};
+const totalStakeBase = m => {
+  if(m.stakes && m.stakes.length) return m.stakes.reduce((s,p)=>s+(p.base||0),0);
+  return parseFloat(m.base)||0;
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PERSIST
+// PERSIST (auto-push on every save when URL set)
 // ═══════════════════════════════════════════════════════════════════════════════
 function saveState(){
-  state.members = members;
-  state.rewards  = rewards;
+  state.members       = members;
+  state.rewards       = rewards;
+  state.otherEarnings = otherEarnings;
   localStorage.setItem(LS, JSON.stringify(state));
+  if(state.syncUrl) syncPush(true);
 }
 function loadState(){
-  try{
-    const raw = localStorage.getItem(LS);
-    if(raw){ const s=JSON.parse(raw); Object.assign(state,s); }
-  }catch(e){}
-  members = Array.isArray(state.members) ? state.members : [];
-  rewards  = Array.isArray(state.rewards)  ? state.rewards  : [];
-  // Apply to inputs — only if saved value exists (non-zero / non-empty)
+  try{ const raw=localStorage.getItem(LS); if(raw){ const s=JSON.parse(raw); Object.assign(state,s); } }catch(e){}
+  members       = Array.isArray(state.members)       ? state.members       : [];
+  rewards       = Array.isArray(state.rewards)       ? state.rewards       : [];
+  otherEarnings = Array.isArray(state.otherEarnings) ? state.otherEarnings : [];
   if(state.own.oriAmount)  $('oriAmount').value  = state.own.oriAmount;
   if(state.own.myInterest) $('myInterest').value = state.own.myInterest;
   if(state.own.qmax)       $('myQmax').value     = state.own.qmax;
-  if(state.own.kUsd)       $('kUsd') && ($('kUsd').value = state.own.kUsd);
-  if(state.inputs.rebase)  $('rebase').value  = state.inputs.rebase;
-  if(state.inputs.totalCV) $('totalCV').value = state.inputs.totalCV;
-  // rates
-  $('rate360').value  = state.rates['360 Day'];
-  $('rate180').value  = state.rates['180 Day'];
-  $('rate90').value   = state.rates['90 Day'];
+  $('rate360').value   = state.rates['360 Day'];
+  $('rate180').value   = state.rates['180 Day'];
+  $('rate90').value    = state.rates['90 Day'];
   $('rateFlexi').value = state.rates['Flexi'];
   if(state.syncUrl) $('syncUrl').value = state.syncUrl;
-  $('rwDate').value = todayLocal();
+  $('rwDate').value  = todayLocal();
+  $('oeDate').value  = todayLocal();
   renderAll();
 }
 function saveRates(){
@@ -516,7 +553,7 @@ function saveRates(){
 // ═══════════════════════════════════════════════════════════════════════════════
 // TABS
 // ═══════════════════════════════════════════════════════════════════════════════
-function switchTab(id, btn){
+function switchTab(id,btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   $('panel-'+id).classList.add('active');
@@ -527,24 +564,21 @@ function switchTab(id, btn){
 // ORI INPUT HANDLERS
 // ═══════════════════════════════════════════════════════════════════════════════
 function onOriAmountChange(){
-  const base = parseFloat($('oriAmount').value)||0;
-  const int  = parseFloat($('myInterest').value)||0;
-  $('myQmax').value = base + int || '';
-  state.own.oriAmount  = base;
-  state.own.myInterest = int;
-  state.own.qmax       = base + int;
+  const base=parseFloat($('oriAmount').value)||0;
+  const int =parseFloat($('myInterest').value)||0;
+  $('myQmax').value=base+int||'';
+  state.own.oriAmount=base; state.own.myInterest=int; state.own.qmax=base+int;
   calc(); saveState();
 }
 function onInterestChange(){
-  const base = parseFloat($('oriAmount').value)||0;
-  const int  = parseFloat($('myInterest').value)||0;
-  $('myQmax').value = base + int || '';
-  state.own.myInterest = int;
-  state.own.qmax       = base + int;
+  const base=parseFloat($('oriAmount').value)||0;
+  const int =parseFloat($('myInterest').value)||0;
+  $('myQmax').value=base+int||'';
+  state.own.myInterest=int; state.own.qmax=base+int;
   calc(); saveState();
 }
 function onQmaxChange(){
-  state.own.qmax = parseFloat($('myQmax').value)||0;
+  state.own.qmax=parseFloat($('myQmax').value)||0;
   calc(); saveState();
 }
 
@@ -552,22 +586,14 @@ function onQmaxChange(){
 // MAIN CALC
 // ═══════════════════════════════════════════════════════════════════════════════
 function calc(){
-  state.inputs.rebase      = parseFloat($('rebase').value)||0;
-  state.inputs.totalCV     = parseFloat($('totalCV').value)||0;
-  state.inputs.actualReward= parseFloat($('actualReward').value)||0;
-  const Qmax    = parseFloat($('myQmax').value)||0;
-  const rebase  = state.inputs.rebase;
-  const totalCV = state.inputs.totalCV;
-  const actual  = state.inputs.actualReward;
-  const price   = livePrice;
+  const Qmax = parseFloat($('myQmax').value)||0;
 
-  // K & N
-  const K = Qmax * price;
-  const N = Qmax > 0 ? K / Qmax : 0;
-  $('nVal').textContent = N ? N.toFixed(4) : '—';
-  $('kVal').textContent = K ? '$'+K.toFixed(2) : '—';
+  // K = USD value of ORI staked (stake base only, not interest)
+  const oriAmt = parseFloat($('oriAmount').value)||0;
+  const K = oriAmt * livePrice;
+  // N = weight coefficient: 0.00001 × K + 0.9, capped at 1.0
+  const N = Math.min(1.0, 0.00001 * K + 0.9);
 
-  // Team ΣQi
   let sumQi = 0;
   members.forEach(m=>{
     const est   = projectedBalance(m);
@@ -575,7 +601,6 @@ function calc(){
     sumQi += est * decay;
   });
 
-  // B
   const Bmax = 0.5;
   const B    = Qmax > 0 ? Math.min(sumQi/Qmax, Bmax) : 0;
   const Bpct = (B/Bmax*100).toFixed(1);
@@ -583,47 +608,45 @@ function calc(){
   $('bPct').textContent = Bpct+'% of max B';
   $('bBar').style.width = Math.min(100,parseFloat(Bpct))+'%';
 
-  // M
   const M = Qmax + sumQi + B * Qmax;
   $('mVal').textContent  = M ? fmtN(M,4) : '—';
   $('sumQi').textContent = fmtN(sumQi,4);
   $('teamSize').textContent = members.length;
 
-  // N tag
-  const nTag = $('nTag');
-  if(!K){ nTag.textContent='—'; nTag.className='nk-tag tag-info'; }
-  else if(N<0.5){ nTag.textContent='Low'; nTag.className='nk-tag tag-warn'; }
-  else if(N<1)  { nTag.textContent='OK';  nTag.className='nk-tag tag-good'; }
-  else           { nTag.textContent='High';nTag.className='nk-tag tag-info'; }
+  // Update N metric card (nMetricVal added to metrics grid below)
+  const nEl = $('nMetricVal');
+  if(nEl){
+    nEl.textContent = N.toFixed(4);
+    const nSub = $('nMetricSub');
+    if(nSub){
+      if(!livePrice){ nSub.textContent = 'Awaiting live price'; }
+      else if(K===0){ nSub.textContent = 'K = $0 staked'; }
+      else if(N>=1) { nSub.textContent = 'K=$'+K.toFixed(0)+' · Capped at max (1.0)'; }
+      else {
+        const oriNeeded = (0.1 / 0.00001 / livePrice).toFixed(0);
+        nSub.textContent = 'K=$'+K.toFixed(0)+' · +$'+(((1-N)/0.00001)).toFixed(0)+' USD to reach N=1';
+      }
+    }
+  }
 
-  // Yield
-  let yieldOri = 0;
-  if(rebase>0 && totalCV>0 && M>0) yieldOri = 0.8 * rebase * (M / totalCV);
-  $('yieldOri').textContent = fmtN(yieldOri,4);
-  $('yieldFiat').textContent = 'ORI / day · '+fmtC(yieldOri);
-
-  // Back-calc
-  const bc = $('backCalcNote');
-  if(actual>0 && M>0 && Qmax>0 && (rebase>0||totalCV>0)){
-    let note = '';
-    if(rebase>0)  note += 'Implied Total CV ≈ '+Math.round(0.8*rebase*M/actual).toLocaleString()+' · ';
-    if(totalCV>0) note += 'Implied Rebase ≈ '+Math.round(actual*totalCV/(0.8*M)).toLocaleString();
-    bc.textContent = '🔁 Back-calc → '+note;
-    bc.style.display='block';
-  } else { bc.style.display='none'; }
+  // Yield display — shows M value; actual daily yield requires network data
+  // which is not available, so we show M as the contribution weight only
+  $('yieldOri').textContent = M ? fmtN(M,2) : '—';
+  $('yieldFiat').textContent = 'Weight M · higher = more of the network reward pool';
 
   renderTracker(); renderPersonalTab(); renderRewardTotals();
 }
+
+// Network estimation removed (insufficient data)
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MEMBER TABLE (calc tab)
 // ═══════════════════════════════════════════════════════════════════════════════
 function renderMembers(){
-  const tbody = $('memberBody');
-  const empty = $('memberEmpty');
+  const tbody=$('memberBody'), empty=$('memberEmpty');
   tbody.innerHTML='';
-  empty.style.display = members.length===0?'block':'none';
-  $('teamSize').textContent = members.length;
+  empty.style.display=members.length===0?'block':'none';
+  $('teamSize').textContent=members.length;
   members.forEach((m,i)=>{
     const est   = projectedBalance(m);
     const decay = Math.pow(0.9,(m.level||1)-1);
@@ -644,17 +667,24 @@ function renderMembers(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STAKE TRACKER (tab 3)
+// STAKE TRACKER (tab 3) — no Est. Power, has maturity, multiple positions
 // ═══════════════════════════════════════════════════════════════════════════════
-function renderTracker(){
-  const tbody = $('trackerBody');
-  tbody.innerHTML='';
+function matCls(days){
+  if(days===null) return {cls:'',rowCls:'',str:'—'};
+  if(days<0)  return {cls:'mat-overdue',rowCls:'row-urgent',str:'OVERDUE'};
+  if(days<=3) return {cls:'mat-urgent', rowCls:'row-urgent',str:days+'d'};
+  if(days<=14)return {cls:'mat-soon',   rowCls:'row-soon',  str:days+'d'};
+  return          {cls:'mat-ok',     rowCls:'',          str:days+'d'};
+}
 
-  // Own wallet row
-  const Qmax  = parseFloat($('myQmax').value)||0;
-  const base  = parseFloat($('oriAmount').value)||0;
-  const int   = parseFloat($('myInterest').value)||0;
-  const ownTr = document.createElement('tr');
+function renderTracker(){
+  const tbody=$('trackerBody');
+  tbody.innerHTML='';
+  // Own wallet — single row (no maturity info since it's free-form)
+  const base=parseFloat($('oriAmount').value)||0;
+  const int =parseFloat($('myInterest').value)||0;
+  const Qmax=parseFloat($('myQmax').value)||0;
+  const ownTr=document.createElement('tr');
   ownTr.innerHTML=
     '<td><span class="pill you">You</span></td>'
    +'<td><strong>My Wallet</strong></td>'
@@ -662,96 +692,156 @@ function renderTracker(){
    +'<td><span class="tier-badge">Custom</span></td>'
    +'<td class="mono">'+fmtN(base,4)+'</td>'
    +'<td class="mono">'+fmtN(int,4)+'</td>'
-   +'<td class="mono">'+fmtN(Qmax,4)+'</td>'
-   +'<td class="mono">'+todayLocal()+'</td>'
-   +'<td>—</td><td>—</td><td></td>';
+   +'<td>—</td><td>—</td><td>—</td><td>—</td><td></td>';
   tbody.appendChild(ownTr);
 
-  // Member rows
   members.forEach((m,i)=>{
-    const est  = projectedBalance(m);
-    const days = m.maturity ? daysBetween(todayLocal(), m.maturity) : '';
-    let daysCls='', daysStr='—';
-    if(days!==''){
-      daysStr=days+'d';
-      daysCls=days<0?'mat-overdue':days<=3?'mat-urgent':days<=14?'mat-soon':'mat-ok';
-    }
-    const upline=m.upline?'<br><span style="font-size:9px;color:var(--text3)">via '+esc(m.upline)+'</span>':'';
-    const tr=document.createElement('tr');
-    tr.innerHTML=
-      '<td><span class="pill">Team</span></td>'
-     +'<td>'+esc(m.name||'—')+upline+'</td>'
-     +'<td title="'+esc(m.addr||'')+'"><span class="addr-cell">'+esc(addrShort(m.addr))+'</span></td>'
-     +'<td><span class="tier-badge">'+esc(m.tier||'360 Day')+'</span></td>'
-     +'<td class="mono">'+fmtN(m.base||0,4)+'</td>'
-     +'<td class="mono">'+fmtN(m.interest||0,4)+'</td>'
-     +'<td class="mono">'+fmtN(est,4)+'</td>'
-     +'<td class="mono">'+(m.lastUpdated||'—')+'</td>'
-     +'<td class="mono '+daysCls+'">'+daysStr+'</td>'
-     +'<td><span class="level-badge">'+(m.level||1)+'</span></td>'
-     +'<td><button class="secondary-btn" style="padding:.2rem .6rem;font-size:10px" onclick="openEditModal('+i+')">Edit</button></td>';
-    tbody.appendChild(tr);
+    // Expand stake positions if they exist, otherwise single row
+    const stakeList = (m.stakes && m.stakes.length>0)
+      ? m.stakes
+      : [{tier:m.tier||'360 Day', base:m.base||0, startDate:m.lastUpdated||'', maturity:m.maturity||''}];
+
+    stakeList.forEach((sp,si)=>{
+      const days=sp.maturity ? daysBetween(todayLocal(),sp.maturity) : null;
+      const mc=matCls(days);
+      const upline=(si===0&&m.upline)?'<br><span style="font-size:9px;color:var(--text3)">via '+esc(m.upline)+'</span>':'';
+      const nameCell=si===0
+        ? esc(m.name||'—')+upline
+        : '<span style="color:var(--text3);font-size:10px">└ pos '+(si+1)+'</span>';
+      const tr=document.createElement('tr');
+      tr.className=mc.rowCls;
+      // Interest shown only on first position row
+      const intCell = si===0 ? fmtN(m.interest||0,4) : '—';
+      tr.innerHTML=
+        '<td>'+(si===0?'<span class="pill">Team</span>':'')+'</td>'
+       +'<td>'+nameCell+'</td>'
+       +'<td>'+(si===0?'<span class="addr-cell" title="'+esc(m.addr||'')+'">'+esc(addrShort(m.addr))+'</span>':'')+'</td>'
+       +'<td><span class="tier-badge">'+esc(sp.tier||'360 Day')+'</span></td>'
+       +'<td class="mono">'+fmtN(sp.base||0,4)+'</td>'
+       +'<td class="mono">'+intCell+'</td>'
+       +'<td class="mono">'+(sp.startDate||'—')+'</td>'
+       +'<td class="mono">'+(sp.maturity||'—')+'</td>'
+       +'<td class="mono '+mc.cls+'">'+mc.str+'</td>'
+       +'<td>'+(si===0?'<span class="level-badge">'+(m.level||1)+'</span>':'')+'</td>'
+       +'<td>'+(si===0?'<button class="secondary-btn" style="padding:.2rem .6rem;font-size:10px" onclick="openEditModal('+i+')">Edit</button>':'')+'</td>';
+      tbody.appendChild(tr);
+    });
   });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PERSONAL STAKE (tab 4)
+// PERSONAL STAKE (tab 4) — base + interest only, no Est. Power
 // ═══════════════════════════════════════════════════════════════════════════════
 function renderPersonalTab(){
-  const tbody = $('personalBody');
-  const empty = $('personalEmpty');
+  const tbody=$('personalBody'), empty=$('personalEmpty');
   tbody.innerHTML='';
-
   const rows=[];
-  // My own primary wallet always included
-  const Qmax = parseFloat($('myQmax').value)||0;
-  const base  = parseFloat($('oriAmount').value)||0;
-  const int   = parseFloat($('myInterest').value)||0;
-  if(base||int||Qmax) rows.push({label:'My Wallet (primary)',addr:'—',tier:'Custom',base,interest:int,power:Qmax,updated:todayLocal()});
 
-  // Members flagged mine
+  // Primary wallet row
+  const base=parseFloat($('oriAmount').value)||0;
+  const int =parseFloat($('myInterest').value)||0;
+  if(base||int) rows.push({label:'My Wallet',tier:'Custom',base,interest:int,startDate:'',maturity:''});
+
+  // Members flagged "mine" — expand stake positions
   members.forEach(m=>{
     if(!m.mine) return;
-    rows.push({label:esc(m.name||'—'),addr:m.addr,tier:m.tier,base:m.base||0,interest:m.interest||0,power:projectedBalance(m),updated:m.lastUpdated||'—'});
+    const stakeList=(m.stakes&&m.stakes.length>0)
+      ? m.stakes
+      : [{tier:m.tier||'360 Day',base:m.base||0,startDate:m.lastUpdated||'',maturity:m.maturity||''}];
+    stakeList.forEach((sp,si)=>{
+      rows.push({
+        label: esc(m.name||'—')+(stakeList.length>1?' pos '+(si+1):''),
+        tier:  sp.tier||'360 Day',
+        base:  sp.base||0,
+        interest: si===0 ? (m.interest||0) : 0, // show interest only on first position
+        startDate: sp.startDate||'',
+        maturity:  sp.maturity||''
+      });
+    });
   });
 
-  let totalBase=0, totalPower=0;
+  let totBase=0, totInterest=0;
   rows.forEach(r=>{
-    totalBase  += parseFloat(r.base)||0;
-    totalPower += parseFloat(r.power)||0;
+    totBase     += r.base;
+    totInterest += r.interest;
+    const days=r.maturity?daysBetween(todayLocal(),r.maturity):null;
+    const mc=matCls(days);
     const tr=document.createElement('tr');
     tr.innerHTML=
       '<td>'+r.label+'</td>'
-     +'<td><span class="addr-cell" title="'+esc(r.addr)+'">'+esc(addrShort(r.addr))+'</span></td>'
      +'<td><span class="tier-badge">'+esc(r.tier)+'</span></td>'
-     +'<td class="mono">'+fmtN(r.base,4)+'</td>'
-     +'<td class="mono">'+fmtN(r.interest,4)+'</td>'
-     +'<td class="mono">'+fmtN(r.power,4)+'</td>'
-     +'<td class="mono">'+r.updated+'</td>';
+     +'<td class="mono" style="color:var(--teal)">'+fmtN(r.base,4)+'</td>'
+     +'<td class="mono" style="color:var(--gold)">'+(r.interest?fmtN(r.interest,4):'—')+'</td>'
+     +'<td class="mono">'+(r.startDate||'—')+'</td>'
+     +'<td class="mono">'+(r.maturity||'—')+'</td>'
+     +'<td class="mono '+mc.cls+'">'+mc.str+'</td>';
     tbody.appendChild(tr);
   });
+  empty.style.display=rows.length===0?'block':'none';
 
-  empty.style.display = rows.length===0?'block':'none';
-  $('psTotalBase').textContent  = fmtN(totalBase,4);
-  $('psTotalPower').textContent = fmtN(totalPower,4);
-  $('psTotalBaseFiat').textContent = fmtC(totalBase);
+  const totOther=otherEarnings.reduce((s,e)=>s+(e.amount||0),0);
+  const grand=totBase+totInterest+totOther;
+
+  $('psTotalBase').textContent      = fmtN(totBase,4);
+  $('psTotalBaseFiat').textContent  = fmtC(totBase);
+  $('psTotalInterest').textContent  = fmtN(totInterest,4);
+  $('psTotalInterestFiat').textContent = fmtC(totInterest);
+  $('psTotalOther').textContent     = fmtN(totOther,4);
+  $('psTotalOtherFiat').textContent = fmtC(totOther);
+  $('psGrandTotal').textContent     = fmtN(grand,4);
+
+  const gtUsd = livePrice ? grand*livePrice : 0;
+  const gtSgd = gtUsd&&sgdRate ? gtUsd*sgdRate : 0;
+  $('psGrandTotalUsd').textContent = gtUsd ? '$'+gtUsd.toFixed(2)+' USD' : '— USD';
+  $('psGrandTotalSgd').textContent = gtSgd ? 'S$'+gtSgd.toFixed(2)+' SGD' : '— SGD';
+
+  renderOtherEarnings();
+}
+
+// ── Other Earnings ─────────────────────────────────────────────────────────────
+function saveOtherEarning(){
+  const date=$('oeDate').value||todayLocal();
+  const amount=parseFloat($('oeAmount').value)||0;
+  const note=($('oeNote').value||'').trim();
+  if(!amount){ alert('Enter an amount.'); return; }
+  otherEarnings.unshift({date,amount,note});
+  $('oeAmount').value=''; $('oeNote').value='';
+  saveState(); renderPersonalTab();
+}
+function deleteOtherEarning(i){ otherEarnings.splice(i,1); saveState(); renderPersonalTab(); }
+function renderOtherEarnings(){
+  const tbody=$('oeBody'), empty=$('oeEmpty');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  empty.style.display=otherEarnings.length===0?'block':'none';
+  otherEarnings.forEach((e,i)=>{
+    const usdVal=livePrice&&e.amount ? '$'+(e.amount*livePrice).toFixed(2) : '—';
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td class="mono">'+e.date+'</td>'
+     +'<td class="mono" style="color:#a78bfa">'+fmtN(e.amount,4)+'</td>'
+     +'<td>'+esc(e.note||'—')+'</td>'
+     +'<td class="mono">'+usdVal+'</td>'
+     +'<td><button class="rm-btn" onclick="deleteOtherEarning('+i+')">×</button></td>';
+    tbody.appendChild(tr);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // REWARDS (tab 2)
 // ═══════════════════════════════════════════════════════════════════════════════
 function saveReward(){
-  const date = $('rwDate').value;
+  const date=$('rwDate').value;
   if(!date){ alert('Please select a date.'); return; }
   const entry={date,staking:parseFloat($('rwStaking').value)||0,contrib:parseFloat($('rwContrib').value)||0};
-  const existing = rewards.findIndex(r=>r.date===date);
+  const existing=rewards.findIndex(r=>r.date===date);
   if(existing>-1) rewards[existing]=entry; else rewards.push(entry);
   rewards.sort((a,b)=>b.date.localeCompare(a.date));
   $('rwStaking').value=''; $('rwContrib').value='';
   saveState(); renderRewards(); renderRewardTotals();
 }
 function bulkImport(){
-  const lines = $('bulkInput').value.trim().split('\n');
+  const lines=$('bulkInput').value.trim().split('\n');
   let ok=0,skip=0;
   lines.forEach(l=>{
     const parts=l.split(',').map(p=>p.trim());
@@ -800,74 +890,167 @@ function renderRewardTotals(){
 function renderAll(){ renderMembers(); renderRewards(); renderRewardTotals(); calc(); }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MODAL
+// MODAL — stake positions
 // ═══════════════════════════════════════════════════════════════════════════════
+const TIER_DAYS = {'360 Day':360,'180 Day':180,'90 Day':90,'Flexi':0};
+
+function stakeRowHtml(s, idx){
+  const days  = s.maturity ? daysBetween(todayLocal(), s.maturity) : null;
+  const mc    = matCls(days);
+  const tiers = ['360 Day','180 Day','90 Day','Flexi'];
+  return `<div class="stake-row ${mc.rowCls}" id="sr_${idx}">
+    <div class="field"><label>Tier</label>
+      <select onchange="modalStakes[${idx}].tier=this.value;autoMaturity(${idx})">
+        ${tiers.map(t=>`<option${s.tier===t?' selected':''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Base ($ORI)</label>
+      <input type="number" value="${s.base||''}" placeholder="0" min="0" step="0.0001"
+        oninput="modalStakes[${idx}].base=parseFloat(this.value)||0">
+    </div>
+    <div class="field"><label>Start Date</label>
+      <input type="date" value="${s.startDate||''}"
+        oninput="modalStakes[${idx}].startDate=this.value;autoMaturity(${idx})">
+    </div>
+    <div class="field"><label>Maturity <span style="color:var(--text3);font-size:9px">(auto)</span></label>
+      <input type="date" value="${s.maturity||''}"
+        oninput="modalStakes[${idx}].maturity=this.value;refreshStakeRows()">
+    </div>
+    <button type="button" class="rm-btn" style="margin-bottom:.2rem" onclick="removeStakeRow(${idx})">×</button>
+  </div>`;
+}
+function autoMaturity(idx){
+  const s=modalStakes[idx];
+  if(!s.startDate) return;
+  const d=new Date(s.startDate);
+  d.setDate(d.getDate()+(TIER_DAYS[s.tier]??0));
+  s.maturity=d.toISOString().slice(0,10);
+  refreshStakeRows();
+}
+function refreshStakeRows(){
+  const wrap=$('stakeRowsWrap');
+  if(wrap) wrap.innerHTML=modalStakes.map((s,i)=>stakeRowHtml(s,i)).join('');
+}
+function addStakeRow(){
+  modalStakes.push({tier:'360 Day',base:0,startDate:todayLocal(),maturity:''});
+  autoMaturity(modalStakes.length-1);
+}
+function removeStakeRow(idx){
+  if(modalStakes.length<=1){ alert('At least one position required.'); return; }
+  modalStakes.splice(idx,1); refreshStakeRows();
+}
+
 function buildLevelGrid(selected){
   const grid=$('levelGrid');
   grid.innerHTML='';
   for(let i=1;i<=10;i++){
     const btn=document.createElement('button');
     btn.className='level-btn'+(i===selected?' active':'');
-    btn.textContent='L'+i;
-    btn.type='button';
+    btn.textContent='L'+i; btn.type='button';
     btn.onclick=()=>{ modalLevel=i; document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); toggleUplineWrap(); };
     grid.appendChild(btn);
   }
 }
 function toggleUplineWrap(){
-  $('uplineWrap').style.display = modalLevel>1?'':'none';
+  $('uplineWrap').style.display=modalLevel>1?'':'none';
+  if(modalLevel>1) $('uplineHint').textContent='Your Tier '+(modalLevel-1)+' member who brought this person in';
 }
+
 function openAddModal(){
   modalMode='add'; editIndex=-1; modalLevel=1;
   $('modalTitle').textContent='Add Team Member';
   $('modalSaveBtn').textContent='Add Member';
   $('modalDelBtn').style.display='none';
-  ['m_name','m_addr','m_upline'].forEach(id=>$(id).value='');
-  ['m_base','m_interest'].forEach(id=>$(id).value='');
-  $('m_updated').value=todayLocal();
-  $('m_tier').value='360 Day';
+  $('deleteConfirmRow').style.display='none';
+  ['m_name','m_addr','m_upline','m_interest'].forEach(id=>{ if($(id)) $(id).value=''; });
   $('m_mine').checked=false;
   $('uplineWrap').style.display='none';
+  modalStakes=[{tier:'360 Day',base:0,startDate:todayLocal(),maturity:''}];
+  autoMaturity(0);
   buildLevelGrid(1);
   $('memberModal').classList.add('open');
 }
-function openEditModal(i){
-  modalMode='edit'; editIndex=i; const m=members[i];
+
+function openEditModal(idx){
+  modalMode='edit'; editIndex=idx;
+  const m=members[idx];
   modalLevel=m.level||1;
   $('modalTitle').textContent='Edit Member';
   $('modalSaveBtn').textContent='Update Member';
   $('modalDelBtn').style.display='inline-block';
+  $('deleteConfirmRow').style.display='none';
   $('m_name').value=m.name||'';
   $('m_addr').value=m.addr||'';
-  $('m_base').value=m.base||'';
   $('m_interest').value=m.interest||'';
-  $('m_updated').value=m.lastUpdated||todayLocal();
-  $('m_tier').value=m.tier||'360 Day';
   $('m_upline').value=m.upline||'';
   $('m_mine').checked=m.mine||false;
   $('uplineWrap').style.display=modalLevel>1?'':'none';
+  if(modalLevel>1) $('uplineHint').textContent='Your Tier '+(modalLevel-1)+' member who brought this person in';
+  // Load existing stakes or migrate legacy single-stake
+  if(m.stakes&&m.stakes.length>0){
+    modalStakes=m.stakes.map(s=>({...s}));
+  } else {
+    modalStakes=[{tier:m.tier||'360 Day',base:m.base||0,
+      startDate:m.lastUpdated||todayLocal(),maturity:m.maturity||''}];
+    if(!modalStakes[0].maturity) autoMaturity(0);
+  }
+  refreshStakeRows();
   buildLevelGrid(modalLevel);
   $('memberModal').classList.add('open');
 }
+
 function closeModal(){ $('memberModal').classList.remove('open'); }
-function deleteCurrentMember(){
-  if(editIndex<0) return;
-  const m=members[editIndex];
-  if(confirm('Delete '+esc(m.name||'this member')+'? This cannot be undone.')){
-    members.splice(editIndex,1); saveState(); closeModal(); renderAll();
-  }
+
+// ── 3. DELETE MEMBER — inline confirm (no browser confirm() that hides modal) ──
+function showDeleteConfirm(){
+  if(editIndex<0||editIndex>=members.length) return;
+  const name=members[editIndex].name||'this member';
+  $('deleteConfirmName').textContent=name;
+  $('deleteConfirmRow').style.display='flex';
+  $('modalDelBtn').style.display='none'; // hide trigger while confirming
 }
+function cancelDelete(){
+  $('deleteConfirmRow').style.display='none';
+  $('modalDelBtn').style.display='inline-block';
+}
+function confirmDelete(){
+  if(editIndex<0||editIndex>=members.length){ cancelDelete(); return; }
+  members.splice(editIndex,1);
+  editIndex=-1;
+  $('deleteConfirmRow').style.display='none';
+  closeModal();
+  saveState();
+  renderAll();
+}
+// Keep old name as alias so any cached calls still work
+function deleteCurrentMember(){ showDeleteConfirm(); }
+
 function saveModal(){
   const name=$('m_name').value.trim();
   if(!name){ alert('Please enter a name.'); return; }
+  // Read stake rows from DOM to catch any un-triggering oninput
+  const srDivs=($('stakeRowsWrap')||{}).querySelectorAll?$('stakeRowsWrap').querySelectorAll('.stake-row'):[];
+  srDivs.forEach((div,idx)=>{
+    const sel=div.querySelector('select');
+    const inputs=div.querySelectorAll('input[type="number"],input[type="date"]');
+    if(sel&&modalStakes[idx]) modalStakes[idx].tier=sel.value;
+    if(inputs[0]&&modalStakes[idx]) modalStakes[idx].base=parseFloat(inputs[0].value)||0;
+    if(inputs[1]&&modalStakes[idx]) modalStakes[idx].startDate=inputs[1].value;
+    if(inputs[2]&&modalStakes[idx]) modalStakes[idx].maturity=inputs[2].value;
+  });
+  const totalBase=modalStakes.reduce((s,p)=>s+(p.base||0),0);
+  const maturities=modalStakes.map(p=>p.maturity).filter(Boolean).sort();
   const entry={
     name, addr:$('m_addr').value.trim(),
-    base:parseFloat($('m_base').value)||0,
+    base:totalBase,
     interest:parseFloat($('m_interest').value)||0,
-    lastUpdated:$('m_updated').value||todayLocal(),
-    tier:$('m_tier').value, level:modalLevel,
+    lastUpdated:todayLocal(),
+    tier:modalStakes[0]?.tier||'360 Day',
+    maturity:maturities[0]||'',
     upline:$('m_upline').value.trim(),
-    mine:$('m_mine').checked
+    mine:$('m_mine').checked,
+    level:modalLevel,
+    stakes:modalStakes.map(s=>({...s}))
   };
   if(modalMode==='add') members.push(entry);
   else members[editIndex]=entry;
@@ -891,13 +1074,11 @@ async function fetchPrice(){
     chg.textContent=(change>=0?'+':'')+change.toFixed(2)+'%';
     chg.className='price-chg '+(change>=0?'up':'dn');
     dot.className='price-dot';
-    // update SGD display if we have rate
-    $('sgdVal').textContent=sgdRate?'S$'+(livePrice*sgdRate).toFixed(4):'—';
+    $('sgdVal').textContent=sgdRate?sgdRate.toFixed(4):'—';
     calc();
   }catch(e){
     dot.className='price-dot error';
     val.textContent='—'; chg.textContent='Error';
-    console.warn('Price fetch failed:',e);
   }
 }
 async function fetchSGD(){
@@ -906,38 +1087,37 @@ async function fetchSGD(){
     const data=await res.json();
     sgdRate=data.rates&&data.rates.SGD?data.rates.SGD:0;
     if(!sgdRate) throw new Error('no rate');
-    $('sgdVal').textContent=livePrice?'S$'+(livePrice*sgdRate).toFixed(4):sgdRate.toFixed(4);
+    $('sgdVal').textContent=sgdRate.toFixed(4);
     renderPersonalTab(); renderRewardTotals();
   }catch(e){
     try{
       const r2=await fetch('https://open.er-api.com/v6/latest/USD');
       const d2=await r2.json();
       sgdRate=d2.rates&&d2.rates.SGD?d2.rates.SGD:0;
-      $('sgdVal').textContent=livePrice?'S$'+(livePrice*sgdRate).toFixed(4):sgdRate?sgdRate.toFixed(4):'—';
+      $('sgdVal').textContent=sgdRate?sgdRate.toFixed(4):'—';
       renderPersonalTab(); renderRewardTotals();
     }catch(e2){ $('sgdVal').textContent='—'; }
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SYNC
+// SYNC — auto-push on every saveState
 // ═══════════════════════════════════════════════════════════════════════════════
-async function syncPush(){
-  const url=$('syncUrl').value.trim();
-  if(!url){ $('syncStatus').textContent='No URL set.'; return; }
-  state.syncUrl=url; saveState();
+async function syncPush(silent=false){
+  const url=($('syncUrl')&&$('syncUrl').value.trim())||state.syncUrl;
+  if(!url){ if(!silent) $('syncStatus').textContent='No URL set.'; return; }
   try{
     await fetch(url,{method:'POST',body:JSON.stringify(state),headers:{'Content-Type':'application/json'}});
-    $('syncStatus').textContent='Pushed at '+new Date().toLocaleTimeString();
-  }catch(e){ $('syncStatus').textContent='Push failed: '+e.message; }
+    if(!silent) $('syncStatus').textContent='Pushed at '+new Date().toLocaleTimeString();
+  }catch(e){ if(!silent) $('syncStatus').textContent='Push failed: '+e.message; }
 }
 async function syncPull(){
   const url=$('syncUrl').value.trim();
   if(!url){ $('syncStatus').textContent='No URL set.'; return; }
   try{
     const res=await fetch(url); const data=await res.json();
-    Object.assign(state,data); members=state.members||[]; rewards=state.rewards||[];
-    saveState(); loadState();
+    Object.assign(state,data); members=state.members||[]; rewards=state.rewards||[]; otherEarnings=state.otherEarnings||[];
+    localStorage.setItem(LS,JSON.stringify(state)); loadState();
     $('syncStatus').textContent='Pulled at '+new Date().toLocaleTimeString();
   }catch(e){ $('syncStatus').textContent='Pull failed: '+e.message; }
 }
