@@ -721,7 +721,9 @@ function renderOwnStakes(){
 
 function addOwnStake(){
   ownStakes.push({tier:'360 Day',base:0,startDate:todayLocal(),maturity:''});
-  autoOwnMaturity(ownStakes.length-1);
+  renderOwnStakes();   // render first so the new row exists in DOM
+  const newIdx = ownStakes.length-1;
+  autoOwnMaturity(newIdx); // then compute & fill maturity in-place
   saveState();
 }
 
@@ -1051,7 +1053,7 @@ function renderRewardTotals(){
 // ═══════════════════════════════════════════════════════════════════════════════
 // RENDERALL
 // ═══════════════════════════════════════════════════════════════════════════════
-function renderAll(){ renderMembers(); renderRewards(); renderRewardTotals(); calc(); }
+function renderAll(){ renderOwnStakes(); renderMembers(); renderRewards(); renderRewardTotals(); calc(); }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MODAL — stake positions
@@ -1111,7 +1113,8 @@ function refreshStakeRows(){
 }
 function addStakeRow(){
   modalStakes.push({tier:'360 Day',base:0,startDate:todayLocal(),maturity:''});
-  autoMaturity(modalStakes.length-1);
+  refreshStakeRows();  // render first so the new row exists in DOM
+  autoMaturity(modalStakes.length-1); // then fill maturity in-place
 }
 function removeStakeRow(idx){
   if(modalStakes.length<=1){ alert('At least one position required.'); return; }
