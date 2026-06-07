@@ -145,9 +145,56 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
   .field-grid{grid-template-columns:1fr}
   .metrics-grid{grid-template-columns:1fr 1fr}
 }
+
+/* ── Custom Date Picker ── */
+.dp-wrap{position:relative;display:block}
+.dp-wrap input[type=date]{cursor:pointer}
+.dp-cal{position:fixed;z-index:9999;background:var(--surface);border:1px solid var(--border2);
+  border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.6);padding:.75rem;width:260px;
+  user-select:none;display:none}
+.dp-cal.open{display:block}
+.dp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.dp-nav{background:none;border:none;color:var(--text2);cursor:pointer;font-size:16px;
+  padding:.1rem .4rem;border-radius:4px;line-height:1}
+.dp-nav:hover{background:var(--border2);color:var(--teal)}
+.dp-month-label{font-size:12px;font-weight:600;color:var(--text1);cursor:pointer}
+.dp-month-label:hover{color:var(--teal)}
+.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dp-dow{font-size:9px;text-align:center;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.05em;padding:.2rem 0}
+.dp-day{font-size:11px;text-align:center;padding:.3rem .1rem;border-radius:4px;
+  cursor:pointer;color:var(--text2);line-height:1.4}
+.dp-day:hover{background:var(--border2);color:var(--text1)}
+.dp-day.today{color:var(--teal);font-weight:700}
+.dp-day.selected{background:var(--teal);color:#000;font-weight:700}
+.dp-day.other-month{color:var(--text3);opacity:.4}
+.dp-day.empty{cursor:default}
+.dp-day.empty:hover{background:none}
+.dp-footer{display:flex;justify-content:space-between;margin-top:.6rem;gap:.4rem}
+.dp-today-btn{flex:1;background:var(--surface2);border:1px solid var(--border2);
+  color:var(--text2);border-radius:6px;padding:.3rem;font-size:10px;cursor:pointer}
+.dp-today-btn:hover{border-color:var(--teal);color:var(--teal)}
+.dp-clear-btn{background:var(--surface2);border:1px solid var(--border2);
+  color:var(--text3);border-radius:6px;padding:.3rem .6rem;font-size:10px;cursor:pointer}
+.dp-clear-btn:hover{border-color:var(--red);color:var(--red)}
 </style>
 </head>
 <body>
+
+
+<!-- ═══ CUSTOM DATE PICKER ═══ -->
+<div class="dp-cal" id="dpCal">
+  <div class="dp-head">
+    <button class="dp-nav" id="dpPrev" onclick="dpNav(-1)">&#8249;</button>
+    <span class="dp-month-label" id="dpLabel" onclick="dpToday()"></span>
+    <button class="dp-nav" id="dpNext" onclick="dpNav(1)">&#8250;</button>
+  </div>
+  <div class="dp-grid" id="dpGrid"></div>
+  <div class="dp-footer">
+    <button class="dp-today-btn" onclick="dpPickToday()">Today</button>
+    <button class="dp-clear-btn" onclick="dpClear()">Clear</button>
+  </div>
+</div>
 
 <!-- ═══ MODAL ═══ -->
 <div class="modal-overlay" id="memberModal">
@@ -303,7 +350,7 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
   <div class="card">
     <div class="card-title">Log Today's Rewards</div>
     <div class="field-grid">
-      <div class="field"><label>Date</label><input type="date" id="rwDate"></div>
+      <div class="field"><label>Date</label><input type="date" id="rwDate" onclick="dpOpen(this,v=>{this.value=v})" onchange="dpHandleTyped(this,v=>{this.value=v})"></div>
       <div class="field"><label>Staking Reward (sORI)</label><input type="number" id="rwStaking" placeholder="e.g. 12.3456" step="0.0001" min="0"></div>
       <div class="field"><label>Contribution Reward (ORI)</label><input type="number" id="rwContrib" placeholder="e.g. 8.1234" step="0.0001" min="0"></div>
     </div>
@@ -407,7 +454,7 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
     <div class="card-title">Other $ORI Earned</div>
     <p style="font-size:11px;color:var(--text3);margin-bottom:.75rem">Log $ORI from other sources — airdrops, referral bonuses, trading, etc.</p>
     <div class="field-grid">
-      <div class="field"><label>Date</label><input type="date" id="oeDate"></div>
+      <div class="field"><label>Date</label><input type="date" id="oeDate" onclick="dpOpen(this,v=>{this.value=v})" onchange="dpHandleTyped(this,v=>{this.value=v})"></div>
       <div class="field"><label>Amount ($ORI)</label><input type="number" id="oeAmount" placeholder="e.g. 5.0" step="0.0001" min="0"></div>
       <div class="field"><label>Source / Note</label><input type="text" id="oeNote" placeholder="e.g. Airdrop, referral bonus"></div>
     </div>
@@ -612,24 +659,57 @@ function ownStakeRowHtml(s, idx){
     </div>
     <div class="field"><label>Start Date</label>
       <input type="date" value="${s.startDate||''}"
-        oninput="ownStakes[${idx}].startDate=this.value;autoOwnMaturity(${idx})">
+        onclick="dpOpen(this, v=>{ ownStakes[${idx}].startDate=v; this.value=v; updateOwnMaturity(${idx}); })"
+        onchange="dpHandleTyped(this, v=>{ ownStakes[${idx}].startDate=v; updateOwnMaturity(${idx}); })">
     </div>
     <div class="field"><label>Maturity <span style="color:var(--text3);font-size:9px">(auto)</span></label>
-      <input type="date" value="${s.maturity||''}"
-        oninput="ownStakes[${idx}].maturity=this.value;renderOwnStakes()">
+      <input type="date" value="${s.maturity||''}" id="osr_mat_${idx}"
+        onclick="dpOpen(this, v=>{ ownStakes[${idx}].maturity=v; this.value=v; updateOwnRowColor(${idx}); saveState(); })"
+        onchange="dpHandleTyped(this, v=>{ ownStakes[${idx}].maturity=v; updateOwnRowColor(${idx}); saveState(); })">
     </div>
     <button type="button" class="rm-btn" style="margin-bottom:.2rem"
       onclick="removeOwnStake(${idx})">×</button>
   </div>`;
 }
 
-function autoOwnMaturity(idx){
+// Update maturity in-place without re-rendering the whole row
+function updateOwnMaturity(idx){
   const s=ownStakes[idx];
-  if(!s.startDate) return;
+  if(!s.startDate){ saveState(); return; }
   const d=new Date(s.startDate);
   d.setDate(d.getDate()+(TIER_DAYS[s.tier]??0));
   s.maturity=d.toISOString().slice(0,10);
-  renderOwnStakes();
+  // Update maturity input value in-place
+  const matEl=$('osr_mat_'+idx);
+  if(matEl){ matEl.value=s.maturity; updateOwnRowColor(idx); }
+  recalcOwnQmax(); saveState();
+}
+function updateOwnMaturityCell(idx, val){
+  const matEl=$('osr_mat_'+idx);
+  if(matEl) matEl.value=val;
+  updateOwnRowColor(idx);
+}
+function updateOwnRowColor(idx){
+  const s=ownStakes[idx];
+  const el=$('osr_'+idx);
+  if(!el) return;
+  const days=s.maturity?daysBetween(todayLocal(),s.maturity):null;
+  const mc=matCls(days);
+  el.className='stake-row '+(mc.rowCls||'');
+}
+// Legacy — only called on tier change (select doesn't break focus) or add/remove
+function autoOwnMaturity(idx){
+  const s=ownStakes[idx];
+  if(!s.startDate){ saveState(); return; }
+  const d=new Date(s.startDate);
+  d.setDate(d.getDate()+(TIER_DAYS[s.tier]??0));
+  s.maturity=d.toISOString().slice(0,10);
+  // Update both inputs in-place without full re-render
+  const startEl=document.querySelector('#osr_'+idx+' input[type=date]:first-of-type');
+  const matEl=$('osr_mat_'+idx);
+  if(matEl){ matEl.value=s.maturity; }
+  updateOwnRowColor(idx);
+  recalcOwnQmax(); saveState();
 }
 
 function renderOwnStakes(){
@@ -994,11 +1074,13 @@ function stakeRowHtml(s, idx){
     </div>
     <div class="field"><label>Start Date</label>
       <input type="date" value="${s.startDate||''}"
-        oninput="modalStakes[${idx}].startDate=this.value;autoMaturity(${idx})">
+        onclick="dpOpen(this, v=>{ modalStakes[${idx}].startDate=v; this.value=v; updateModalMaturity(${idx}); })"
+        onchange="dpHandleTyped(this, v=>{ modalStakes[${idx}].startDate=v; updateModalMaturity(${idx}); })">
     </div>
     <div class="field"><label>Maturity <span style="color:var(--text3);font-size:9px">(auto)</span></label>
-      <input type="date" value="${s.maturity||''}"
-        oninput="modalStakes[${idx}].maturity=this.value;refreshStakeRows()">
+      <input type="date" value="${s.maturity||''}" id="sr_mat_${idx}"
+        onclick="dpOpen(this, v=>{ modalStakes[${idx}].maturity=v; this.value=v; updateRowColor(${idx},'modal'); })"
+        onchange="dpHandleTyped(this, v=>{ modalStakes[${idx}].maturity=v; updateRowColor(${idx},'modal'); })">
     </div>
     <button type="button" class="rm-btn" style="margin-bottom:.2rem" onclick="removeStakeRow(${idx})">×</button>
   </div>`;
@@ -1009,7 +1091,19 @@ function autoMaturity(idx){
   const d=new Date(s.startDate);
   d.setDate(d.getDate()+(TIER_DAYS[s.tier]??0));
   s.maturity=d.toISOString().slice(0,10);
-  refreshStakeRows();
+  // Update maturity input in-place
+  const matEl=$('sr_mat_'+idx);
+  if(matEl){ matEl.value=s.maturity; updateRowColor(idx,'modal'); }
+}
+function updateModalMaturity(idx){ autoMaturity(idx); }
+function updateRowColor(idx, type){
+  const s = type==='modal' ? modalStakes[idx] : ownStakes[idx];
+  const id = type==='modal' ? 'sr_'+idx : 'osr_'+idx;
+  const el=$(id);
+  if(!el||!s) return;
+  const days=s.maturity?daysBetween(todayLocal(),s.maturity):null;
+  const mc=matCls(days);
+  el.className='stake-row '+(mc.rowCls||'');
 }
 function refreshStakeRows(){
   const wrap=$('stakeRowsWrap');
@@ -1229,6 +1323,134 @@ async function syncPull(){
       (json.updatedAt?' (saved '+new Date(json.updatedAt).toLocaleString()+')':'');
   }catch(e){ $('syncStatus').textContent='Pull failed: '+e.message; }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CUSTOM DATE PICKER
+// ═══════════════════════════════════════════════════════════════════════════════
+let dpTarget   = null;  // the input element
+let dpCallback = null;  // fn(YYYY-MM-DD)
+let dpYear     = 0;
+let dpMonth    = 0;     // 0-based
+
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+const DAYS   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+// Called when user manually types a date — fires callback once date is complete
+function dpHandleTyped(inputEl, callback){
+  const val = inputEl.value;
+  if(!val) return;
+  // Browsers only set .value when date is fully valid (YYYY-MM-DD)
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(val)) return;
+  callback(val);
+}
+
+function dpOpen(inputEl, callback){
+  // If the calendar is already open for this input, close it (toggle)
+  if($('dpCal').classList.contains('open') && dpTarget===inputEl){
+    dpClose(); return;
+  }
+  dpTarget   = inputEl;
+  dpCallback = callback;
+  // Parse current value or default to today
+  const val = inputEl.value;
+  const base = val ? new Date(val+'T00:00:00') : new Date();
+  dpYear  = base.getFullYear();
+  dpMonth = base.getMonth();
+  dpRender();
+  // Position the calendar below the input
+  const cal = $('dpCal');
+  cal.classList.add('open');
+  const rect = inputEl.getBoundingClientRect();
+  let top  = rect.bottom + window.scrollY + 4;
+  let left = rect.left  + window.scrollX;
+  // Keep within viewport
+  const calW = 260;
+  if(left + calW > window.innerWidth) left = window.innerWidth - calW - 8;
+  if(top + 320 > window.innerHeight + window.scrollY) top = rect.top + window.scrollY - 325;
+  cal.style.top  = top  + 'px';
+  cal.style.left = left + 'px';
+}
+
+function dpClose(){
+  $('dpCal').classList.remove('open');
+  dpTarget=null; dpCallback=null;
+}
+
+function dpRender(){
+  $('dpLabel').textContent = MONTHS[dpMonth] + ' ' + dpYear;
+  const grid = $('dpGrid');
+  grid.innerHTML = '';
+  // Day-of-week headers
+  DAYS.forEach(d=>{
+    const el=document.createElement('div');
+    el.className='dp-dow'; el.textContent=d;
+    grid.appendChild(el);
+  });
+  const firstDay = new Date(dpYear, dpMonth, 1).getDay();
+  const daysInMonth = new Date(dpYear, dpMonth+1, 0).getDate();
+  const daysInPrev  = new Date(dpYear, dpMonth, 0).getDate();
+  const today = todayLocal();
+  const selectedVal = dpTarget ? dpTarget.value : '';
+
+  // Previous month tail
+  for(let i=firstDay-1; i>=0; i--){
+    const el=document.createElement('div');
+    el.className='dp-day other-month';
+    el.textContent=daysInPrev-i;
+    grid.appendChild(el);
+  }
+  // Current month
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = dpYear+'-'+String(dpMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const el=document.createElement('div');
+    let cls='dp-day';
+    if(dateStr===today)    cls+=' today';
+    if(dateStr===selectedVal) cls+=' selected';
+    el.className=cls;
+    el.textContent=d;
+    el.onclick=()=>dpPick(dateStr);
+    grid.appendChild(el);
+  }
+  // Next month fill
+  const total = firstDay + daysInMonth;
+  const remaining = total%7===0 ? 0 : 7-(total%7);
+  for(let d=1; d<=remaining; d++){
+    const el=document.createElement('div');
+    el.className='dp-day other-month'; el.textContent=d;
+    grid.appendChild(el);
+  }
+}
+
+function dpPick(dateStr){
+  if(dpTarget){ dpTarget.value=dateStr; }
+  if(dpCallback){ dpCallback(dateStr); }
+  dpClose();
+}
+function dpPickToday(){ dpPick(todayLocal()); }
+function dpClear(){
+  if(dpTarget){ dpTarget.value=''; }
+  if(dpCallback){ dpCallback(''); }
+  dpClose();
+}
+function dpNav(dir){
+  dpMonth += dir;
+  if(dpMonth>11){ dpMonth=0; dpYear++; }
+  if(dpMonth<0) { dpMonth=11; dpYear--; }
+  dpRender();
+}
+function dpToday(){
+  const t=new Date(); dpYear=t.getFullYear(); dpMonth=t.getMonth(); dpRender();
+}
+// Close on outside click
+document.addEventListener('click', e=>{
+  const cal=$('dpCal');
+  if(!cal.classList.contains('open')) return;
+  if(cal.contains(e.target)) return;
+  if(dpTarget && dpTarget.contains(e.target)) return;
+  dpClose();
+}, true);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INIT
