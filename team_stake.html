@@ -189,7 +189,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:1.
     <div class="card">
       <div class="card-title">Network Parameters</div>
       <div class="field-grid">
-        <div class="field"><label>Daily Rebase Output (ORI)</label><input type="number" id="rebase" value="100000" step="1000" oninput="calc()"><div class="field-hint">Total network daily emission</div></div>
+        <div class="field"><label>Daily Rebase Output (ORI)</label><input type="number" id="rebase" value="" placeholder="e.g. 100000" step="1000" oninput="calc()"><div class="field-hint">Total network daily emission</div></div>
         <div class="field"><label>Total Network Contribution Value</label><input type="number" id="totalCV" value="" placeholder="e.g. 5000000" step="10000" oninput="calc()"><div class="field-hint">Sum of all addresses' CV</div></div>
         <div class="field"><label>Your Known Reward (ORI/day) — optional</label><input type="number" id="actualReward" placeholder="Enter to back-calc" step="0.0001" oninput="calc()"><div class="field-hint">Reverse-engineers network params</div></div>
       </div>
@@ -601,16 +601,28 @@ async function fetchSGD(){
     const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=SGD');
     const d = await r.json();
     sgdRate = d.rates && d.rates.SGD ? d.rates.SGD : 0;
+    if(!sgdRate) throw new Error('no rate');
     const el = document.getElementById('sgdRate');
-    if(el) el.textContent = sgdRate ? sgdRate.toFixed(4) : '—';
+    if(el) el.textContent = sgdRate.toFixed(4);
     renderPersonalTab();
-  }catch(e){ const el=document.getElementById('sgdRate'); if(el) el.textContent='—'; }
+  }catch(e){
+    try{
+      const r2 = await fetch('https://open.er-api.com/v6/latest/USD');
+      const d2 = await r2.json();
+      sgdRate = d2.rates && d2.rates.SGD ? d2.rates.SGD : 0;
+      const el = document.getElementById('sgdRate');
+      if(el) el.textContent = sgdRate ? sgdRate.toFixed(4) : '—';
+      renderPersonalTab();
+    }catch(e2){ const el=document.getElementById('sgdRate'); if(el) el.textContent='—'; }
+  }
 }
 async function fetchPrice(){
   const dot=document.getElementById('priceDot'); const val=document.getElementById('priceVal'); const chg=document.getElementById('priceChg');
   try{
     dot.className='price-dot loading';
-    const r=await fetch('https://api.dexscreener.com/latest/dex/tokens/0xda033999bb6165e64db01bd9be14b40f5653092e');
+    // Try DexScreener via corsproxy.io (CORS-safe for static sites)
+    const proxyUrl='https://corsproxy.io/?'+encodeURIComponent('https://api.dexscreener.com/latest/dex/tokens/0xda033999bb6165e64db01bd9be14b40f5653092e');
+    const r=await fetch(proxyUrl);
     const d=await r.json();
     const pair=d.pairs && d.pairs[0];
     if(!pair) throw new Error('no pair');
