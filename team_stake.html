@@ -104,13 +104,24 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:1.
     <div class="field-grid" style="grid-template-columns:repeat(3,1fr)">
       <div class="field"><label>Name / Label</label><input type="text" id="m_name" placeholder="e.g. Alice"></div>
       <div class="field"><label>Wallet Address</label><input type="text" id="m_addr" placeholder="Partial or full"></div>
-      <div class="field"><label>Stake Base (ORI)</label><input type="number" id="m_base" value="500" min="0" step="0.0001"></div>
-      <div class="field"><label>Interest Earned</label><input type="number" id="m_current" value="0" min="0" step="0.0001"><div class="field-hint">Interest earned on top of stake base</div></div>
+      <div class="field"><label>Stake Base (ORI)</label><input type="number" id="m_base" value="" placeholder="e.g. 500" min="0" step="0.0001"></div>
+      <div class="field"><label>Interest Earned</label><input type="number" id="m_current" value="" placeholder="e.g. 25.3" min="0" step="0.0001"><div class="field-hint">Interest earned on top of stake base</div></div>
       <div class="field"><label>Last Updated Date</label><input type="date" id="m_lastUpdated"></div>
       <div class="field"><label>Maturity Date</label><input type="date" id="m_maturity"></div>
       <div class="field"><label>Tier</label><select id="m_tier"><option>360 Day</option><option>180 Day</option><option>90 Day</option><option>Flexi</option></select></div>
     </div>
     <div class="field" style="margin-top:.75rem"><label>Referral Level</label><div class="level-select-grid" id="levelGrid"></div></div>
+    <div class="field-grid" style="grid-template-columns:1fr 1fr;margin-top:.75rem;gap:.75rem">
+      <div class="field" id="uplineField" style="display:none">
+        <label>Upline (Tier 1 referrer) <span class="info-icon" title="The Level 1 member who referred this person in.">?</span></label>
+        <input type="text" id="m_upline" placeholder="e.g. Alice">
+        <div class="field-hint">Which direct member brought this person in?</div>
+      </div>
+      <div class="field" style="display:flex;align-items:center;gap:.6rem;padding-top:1.6rem">
+        <input type="checkbox" id="m_mine" style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0">
+        <label for="m_mine" style="cursor:pointer;font-size:12px;line-height:1.4">This wallet belongs to me <span style="color:var(--text3)">(shows in Personal Stake)</span></label>
+      </div>
+    </div>
     <div class="modal-btns" style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem"><button class="secondary-btn" onclick="closeModal()">Cancel</button><button class="save-btn" onclick="confirmAddMember()">Add Member</button></div>
   </div>
 </div>
@@ -154,21 +165,21 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:1.
           <label class="info-label">Your ORI Staked (amount)
             <span class="info-icon" title="Enter your ORI amount staked. K will be calculated automatically using the live ORI price.">?</span>
           </label>
-          <input type="number" id="oriAmount" value="1000" min="0" step="0.0001" oninput="calc()">
+          <input type="number" id="oriAmount" value="" placeholder="e.g. 1000" min="0" step="0.0001" oninput="calc()">
           <div class="field-hint">Enter number of ORI staked</div>
         </div>
         <div class="field">
           <label class="info-label">Your Interest Earned
             <span class="info-icon" title="Interest earned is added to your stake base to form your current computing power (Qmax).">?</span>
           </label>
-          <input type="number" id="myInterest" value="0" min="0" step="0.0001" oninput="syncOwnQmaxFromParts()">
+          <input type="number" id="myInterest" value="" placeholder="e.g. 25.3" min="0" step="0.0001" oninput="syncOwnQmaxFromParts()">
           <div class="field-hint">Interest earned on top of your original stake base</div>
         </div>
         <div class="field">
           <label class="info-label">Your Computing Power (Qmax)
             <span class="info-icon" title="Qmax = your stake base + interest earned.">?</span>
           </label>
-          <input type="number" id="myQmax" value="1000" min="1" step="0.0001" oninput="syncOwnPartsFromQmax()">
+          <input type="number" id="myQmax" value="" placeholder="Auto-calculated" min="1" step="0.0001" oninput="syncOwnPartsFromQmax()">
           <div class="field-hint">Auto-calculated as stake base + interest earned, but editable</div>
         </div>
       </div>
@@ -179,7 +190,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:1.
       <div class="card-title">Network Parameters</div>
       <div class="field-grid">
         <div class="field"><label>Daily Rebase Output (ORI)</label><input type="number" id="rebase" value="100000" step="1000" oninput="calc()"><div class="field-hint">Total network daily emission</div></div>
-        <div class="field"><label>Total Network Contribution Value</label><input type="number" id="totalCV" value="5000000" step="10000" oninput="calc()"><div class="field-hint">Sum of all addresses' CV</div></div>
+        <div class="field"><label>Total Network Contribution Value</label><input type="number" id="totalCV" value="" placeholder="e.g. 5000000" step="10000" oninput="calc()"><div class="field-hint">Sum of all addresses' CV</div></div>
         <div class="field"><label>Your Known Reward (ORI/day) — optional</label><input type="number" id="actualReward" placeholder="Enter to back-calc" step="0.0001" oninput="calc()"><div class="field-hint">Reverse-engineers network params</div></div>
       </div>
       <div class="backcalc-note" id="backCalcNote"></div>
@@ -234,8 +245,8 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:1.
       <div class="card-title">Log Today's Rewards</div>
       <div class="field-grid">
         <div class="field"><label>Date</label><input type="text" id="rwDate" placeholder="YYYY-MM-DD (blank = today)"></div>
-        <div class="field"><label>Staking Reward (sORI)</label><input type="number" id="rwStaking" placeholder="0.0000" step="0.0001" min="0"><div class="field-hint">From Fixed Stake / rebase</div></div>
-        <div class="field"><label>Contribution Reward (ORI)</label><input type="number" id="rwContrib" placeholder="0.0000" step="0.0001" min="0"><div class="field-hint">From team contribution yield</div></div>
+        <div class="field"><label>Staking Reward (sORI)</label><input type="number" id="rwStaking" placeholder="e.g. 12.3456" step="0.0001" min="0"><div class="field-hint">From Fixed Stake / rebase</div></div>
+        <div class="field"><label>Contribution Reward (ORI)</label><input type="number" id="rwContrib" placeholder="e.g. 8.1234" step="0.0001" min="0"><div class="field-hint">From team contribution yield</div></div>
       </div>
       <div class="btn-row"><button class="save-btn" onclick="saveReward()">＋ Save Entry</button><button class="clear-btn" onclick="clearHistory()">Clear History</button></div>
     </div>
@@ -312,12 +323,12 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:1.
     <div class="card">
       <div class="card-title">My Wallets</div>
       <p class="small-note" style="margin-bottom:.85rem">
-        Mark which team members belong to you (multiple wallets). Their totals will roll up into your personal stake summary below.
+        Only wallets marked <strong>"This wallet belongs to me"</strong> when adding/editing a team member will appear here. Your primary wallet is always included. Edit a member in the Team Members tab to update their mine status.
       </p>
       <div style="overflow-x:auto">
         <table class="tracker-table">
           <thead>
-            <tr><th>Mine?</th><th>Name</th><th>Address</th><th>Tier</th><th>Stake Base</th><th>Interest</th><th>Current Power</th><th>Maturity Buckets</th></tr>
+            <tr><th>Wallet</th><th>Address</th><th>Tier</th><th>Stake Base</th><th>Interest</th><th>Current Power</th><th>Maturity Buckets</th></tr>
           </thead>
           <tbody id="personalMemberBody"></tbody>
         </table>
@@ -400,7 +411,7 @@ const STORAGE_KEY = 'orizon_v3_data';
 const SYNC_KEY = 'orizon_v3_sync_url';
 const defaultRates = {'360 Day':0.8,'180 Day':0.8,'90 Day':0.8,'Flexi':0.6};
 let state = {
-  own:{oriAmount:1000,myInterest:0,kUsd:0,qmax:1000,maturityBuckets:[]},
+  own:{oriAmount:0,myInterest:0,kUsd:0,qmax:0,maturityBuckets:[]},
   inputs:{rebase:100000,totalCV:5000000,actualReward:''},
   rewards:[],
   members:[],
@@ -499,19 +510,81 @@ function saveRates(){
 }
 function switchTab(name, btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+name).classList.add('active');if(btn) btn.classList.add('active');}
 function buildLevelGrid(selected){const grid=document.getElementById('levelGrid');grid.innerHTML='';for(let n=1;n<=10;n++){const decay=Math.pow(0.9,n-1).toFixed(3);const div=document.createElement('div');div.className='level-opt'+(n===selected?' selected':'');div.innerHTML='<span class="level-opt-num">L'+n+'</span><span class="level-opt-decay">×'+decay+'</span>';div.onclick=()=>{modalSelectedLevel=n;buildLevelGrid(n)};grid.appendChild(div);}}
-function openModal(){modalSelectedLevel=1;buildLevelGrid(1);document.getElementById('m_name').value='';document.getElementById('m_addr').value='';document.getElementById('m_base').value='500';document.getElementById('m_current').value='0';document.getElementById('m_lastUpdated').value=todayLocal();document.getElementById('m_maturity').value='';document.getElementById('m_tier').value='360 Day';document.getElementById('addMemberModal').classList.add('open');}
+function openModal(){modalSelectedLevel=1;buildLevelGrid(1);document.getElementById('m_name').value='';document.getElementById('m_addr').value='';document.getElementById('m_base').value='';document.getElementById('m_current').value='';document.getElementById('m_lastUpdated').value=todayLocal();
+  if(document.getElementById('m_upline')) document.getElementById('m_upline').value='';
+  if(document.getElementById('uplineField')) document.getElementById('uplineField').style.display='none';
+  if(document.getElementById('m_levelSel')) document.getElementById('m_levelSel').value='1';
+  if(document.getElementById('m_mine')) document.getElementById('m_mine').checked=false;
+  modalSelectedLevel=1;document.getElementById('m_maturity').value='';document.getElementById('m_tier').value='360 Day';document.getElementById('addMemberModal').classList.add('open');}
 function closeModal(){document.getElementById('addMemberModal').classList.remove('open');}
+
+function openEditMember(i){
+  const m = members[i];
+  document.getElementById('m_name').value = m.name||'';
+  document.getElementById('m_addr').value = m.addr||'';
+  document.getElementById('m_base').value = m.base||'';
+  document.getElementById('m_current').value = m.interest||'';
+  document.getElementById('m_lastUpdated').value = m.lastUpdated||todayLocal();
+  document.getElementById('m_maturity').value = m.maturity||'';
+  document.getElementById('m_tier').value = m.tier||'360 Day';
+  document.getElementById('m_levelSel').value = m.level||1;
+  modalSelectedLevel = m.level||1;
+  if(document.getElementById('m_upline')) document.getElementById('m_upline').value = m.upline||'';
+  if(document.getElementById('uplineField')) document.getElementById('uplineField').style.display = (m.level||1)>1?'':'none';
+  if(document.getElementById('m_mine')) document.getElementById('m_mine').checked = m.mine||false;
+  toggleUplineField();
+  // Switch confirm button to update mode
+  const btn = document.querySelector('#memberModal .save-btn');
+  if(btn){ btn.textContent='Update Member'; btn.onclick=()=>updateMember(i); }
+  // Show delete button in modal
+  let delBtn = document.getElementById('modalDeleteBtn');
+  if(!delBtn){
+    delBtn = document.createElement('button');
+    delBtn.id='modalDeleteBtn';
+    delBtn.className='rm-btn';
+    delBtn.style='margin-left:auto';
+    document.querySelector('#memberModal .btn-row').appendChild(delBtn);
+  }
+  delBtn.textContent='Delete Member';
+  delBtn.onclick=()=>{ if(confirm('Delete '+escHtml(m.name||'this member')+'? This cannot be undone.')){ removeMember(i); closeModal(); } };
+  document.getElementById('memberModal').style.display='flex';
+}
+function updateMember(i){
+  members[i].name = document.getElementById('m_name').value.trim();
+  members[i].addr = document.getElementById('m_addr').value.trim();
+  members[i].base = parseFloat(document.getElementById('m_base').value)||0;
+  members[i].interest = parseFloat(document.getElementById('m_current').value)||0;
+  members[i].lastUpdated = document.getElementById('m_lastUpdated').value||todayLocal();
+  members[i].maturity = document.getElementById('m_maturity').value||'';
+  members[i].tier = document.getElementById('m_tier').value;
+  members[i].level = modalSelectedLevel;
+  members[i].upline = document.getElementById('m_upline')?document.getElementById('m_upline').value.trim():'';
+  members[i].mine = document.getElementById('m_mine')?document.getElementById('m_mine').checked:false;
+  saveMembersEdit();
+  // Reset modal button back to Add
+  const btn = document.querySelector('#memberModal .save-btn');
+  if(btn){ btn.textContent='Add Member'; btn.onclick=confirmAddMember; }
+  const delBtn = document.getElementById('modalDeleteBtn');
+  if(delBtn) delBtn.remove();
+  closeModal();
+}
+function toggleUplineField(){
+  const lvl = parseInt(document.getElementById('m_levelSel').value)||1;
+  const f = document.getElementById('uplineField');
+  if(f) f.style.display = lvl > 1 ? '' : 'none';
+}
 function confirmAddMember(){
   const item = {
     name:document.getElementById('m_name').value.trim() || 'Member '+(members.length+1),
     addr:document.getElementById('m_addr').value.trim(),
     base:parseFloat(document.getElementById('m_base').value)||0,
-    interest:Math.max(0,(parseFloat(document.getElementById('m_current').value)||0) - (parseFloat(document.getElementById('m_base').value)||0)),
+    interest:parseFloat(document.getElementById('m_current').value)||0,
     lastUpdated:document.getElementById('m_lastUpdated').value || todayLocal(),
     maturity:document.getElementById('m_maturity').value || '',
     tier:document.getElementById('m_tier').value,
     level:modalSelectedLevel,
-    mine:false
+    mine:document.getElementById('m_mine')?document.getElementById('m_mine').checked:false,
+    upline:document.getElementById('m_upline')?document.getElementById('m_upline').value.trim():''
   };
   members.push(item);
   state.members = members;
@@ -661,9 +734,10 @@ function renderTracker(){
     totalBase += Number(r.base||0); totalProj += Number(projected||0);
     const tr=document.createElement('tr'); if(!r.own) tr.className=trackerRowClass(daysLeft);
     if(r.own){
-      tr.innerHTML='<td><span class="pill">You</span></td><td>My Wallet</td><td>—</td><td>Custom</td><td><input type="number" value="'+(r.base||0)+'" step="0.0001" oninput="document.getElementById(\'oriAmount\').value=this.value;manualKOverride=false;syncOwnQmaxFromParts();refreshAll()"></td><td><input type="number" value="'+(r.interest||0)+'" step="0.0001" oninput="document.getElementById(\'myInterest\').value=this.value;syncOwnQmaxFromParts();refreshAll()"></td><td class="mono">'+fmt(projected,4)+'</td><td>'+todayLocal()+'</td><td>'+renderBucketsHtml('own')+'</td><td>—</td><td>—</td><td></td>';
+      tr.innerHTML='<td><span class="pill">You</span></td><td>My Wallet</td><td>—</td><td>Custom</td><td class="mono">'+fmt(r.base||0,4)+'</td><td class="mono">'+fmt(r.interest||0,4)+'</td><td class="mono">'+fmt(projected,4)+'</td><td>'+todayLocal()+'</td><td>'+renderBucketsReadOnly('own')+'</td><td>—</td><td>—</td><td><button class="secondary-btn" style="padding:.2rem .55rem;font-size:10px" onclick="openEditOwnStake()">Edit</button></td>';
     } else {
-      tr.innerHTML='<td><span class="pill">Team</span></td><td><input type="text" value="'+escHtml(r.name||'')+'" oninput="members['+r.idx+'].name=this.value;saveMembersEdit()"></td><td><input type="text" value="'+escHtml(r.addr||'')+'" oninput="members['+r.idx+'].addr=this.value;saveMembersEdit()"></td><td><select onchange="members['+r.idx+'].tier=this.value;saveMembersEdit()"><option'+(r.tier==='360 Day'?' selected':'')+'>360 Day</option><option'+(r.tier==='180 Day'?' selected':'')+'>180 Day</option><option'+(r.tier==='90 Day'?' selected':'')+'>90 Day</option><option'+(r.tier==='Flexi'?' selected':'')+'>Flexi</option></select></td><td><input type="number" value="'+(r.base||0)+'" step="0.0001" oninput="members['+r.idx+'].base=parseFloat(this.value)||0;saveMembersEdit()"></td><td><input type="number" value="'+(r.interest||0)+'" step="0.0001" oninput="members['+r.idx+'].interest=parseFloat(this.value)||0;saveMembersEdit()"></td><td class="mono">'+fmt(projected,4)+'</td><td><input type="date" value="'+(r.lastUpdated||todayLocal())+'" oninput="members['+r.idx+'].lastUpdated=this.value;saveMembersEdit()"></td><td>'+renderBucketsHtml(r.idx)+'</td><td class="mono">'+(daysLeft===''?'—':daysLeft)+'</td><td><select onchange="members['+r.idx+'].level=parseInt(this.value);saveMembersEdit()">'+Array.from({length:10},(_,i)=>'<option value="'+(i+1)+'"'+((r.level||1)===(i+1)?' selected':'')+'>L'+(i+1)+'</option>').join('')+'</select></td><td><button class="rm-btn" onclick="removeMember('+r.idx+')">×</button></td>';
+      const uplineTxt = r.upline?'<br><span style="font-size:9px;color:var(--text3)">via '+escHtml(r.upline)+'</span>':'';
+      tr.innerHTML='<td><span class="pill">Team</span></td><td>'+escHtml(r.name||'—')+uplineTxt+'</td><td class="addr-cell" title="'+escHtml(r.addr||'')+'">'+escHtml(addrShort(r.addr))+'</td><td><span class="tier-badge">'+escHtml(r.tier||'360 Day')+'</span></td><td class="mono">'+fmt(r.base||0,4)+'</td><td class="mono">'+fmt(r.interest||0,4)+'</td><td class="mono">'+fmt(projected,4)+'</td><td class="mono">'+(r.lastUpdated||'—')+'</td><td>'+renderBucketsReadOnly(r.idx)+'</td><td class="mono">'+(daysLeft===''?'—':daysLeft)+'</td><td><span class="pill" style="background:rgba(0,212,180,.08)">L'+(r.level||1)+'</span></td><td><button class="secondary-btn" style="padding:.2rem .55rem;font-size:10px" onclick="openEditMember('+r.idx+')">Edit</button></td>';
     }
     tbody.appendChild(tr);
   });
@@ -732,6 +806,49 @@ function ensureBuckets(target){
   if(!Array.isArray(members[target].maturityBuckets)) members[target].maturityBuckets = [];
   return members[target].maturityBuckets;
 }
+
+function renderBucketsReadOnly(target){
+  const buckets = ensureBuckets(target);
+  if(!buckets.length) return '<span style="color:var(--text3);font-size:10px">None</span>';
+  return buckets.map(b=>{
+    const days = b.date ? daysBetween(todayLocal(), b.date) : '';
+    let cls='pill';
+    if(days!==''&&days<0) cls+=' maturity-overdue';
+    else if(days!==''&&days<=3) cls+=' maturity-urgent';
+    else if(days!==''&&days<=14) cls+=' maturity-soon';
+    else cls+=' maturity-ok';
+    return '<span class="'+cls+'" style="margin-right:3px;font-size:10px">'+fmt(b.amount||0,4)+' ORI'+(b.date?' · '+(days===''?'':days+'d'):'')+'</span>';
+  }).join('');
+}
+
+// Edit own wallet via a simple inline modal approach — reuse member modal
+function openEditOwnStake(){
+  document.getElementById('m_name').value = 'My Wallet';
+  document.getElementById('m_addr').value = '';
+  document.getElementById('m_base').value = parseFloat(document.getElementById('oriAmount').value)||'';
+  document.getElementById('m_current').value = parseFloat(document.getElementById('myInterest').value)||'';
+  document.getElementById('m_lastUpdated').value = todayLocal();
+  document.getElementById('m_maturity').value = '';
+  document.getElementById('m_tier').value = '360 Day';
+  document.getElementById('m_levelSel').value = 1;
+  modalSelectedLevel = 1;
+  if(document.getElementById('uplineField')) document.getElementById('uplineField').style.display='none';
+  const btn = document.querySelector('#memberModal .save-btn');
+  if(btn){ btn.textContent='Update My Stake'; btn.onclick=()=>{
+    document.getElementById('oriAmount').value = document.getElementById('m_base').value;
+    document.getElementById('myInterest').value = document.getElementById('m_current').value;
+    manualKOverride=false;
+    syncOwnQmaxFromParts();
+    const btn2=document.querySelector('#memberModal .save-btn');
+    if(btn2){btn2.textContent='Add Member';btn2.onclick=confirmAddMember;}
+    const delBtn=document.getElementById('modalDeleteBtn');if(delBtn)delBtn.remove();
+    closeModal(); refreshAll();
+  }; }
+  const delBtn = document.getElementById('modalDeleteBtn');
+  if(delBtn) delBtn.remove();
+  document.getElementById('memberModal').style.display='flex';
+}
+
 function renderBucketsHtml(target){
   const buckets = ensureBuckets(target);
   const items = buckets.map((b,idx)=>{
@@ -741,7 +858,7 @@ function renderBucketsHtml(target){
     else if(days!=='' && days<=3) cls+=' maturity-urgent';
     else if(days!=='' && days<=14) cls+=' maturity-soon';
     else cls+=' maturity-ok';
-    return '<div style="display:flex;gap:4px;align-items:center;margin-bottom:4px"><input type="number" value="'+(b.amount||0)+'" step="0.0001" style="width:92px" oninput="updateBucketAmount(\''+target+'\','+idx+',this.value)"><input type="date" value="'+(b.date||'')+'" oninput="updateBucketDate(\''+target+'\','+idx+',this.value)"><span class="'+cls+'">'+(days===''?'No date':days+'d')+'</span><button class="rm-btn" onclick="removeBucket(\''+target+'\','+idx+')">×</button></div>';
+    return '<div style="display:flex;gap:4px;align-items:center;margin-bottom:4px"><input type="number" value="'+(b.amount||0)+'" step="0.0001" min="0" placeholder="ORI amount" style="width:92px" oninput="updateBucketAmount(\''+target+'\','+idx+',this.value)"><input type="date" value="'+(b.date||'')+'" placeholder="Maturity date" oninput="updateBucketDate(\''+target+'\','+idx+',this.value)"><span class="'+cls+'">'+(days===''?'No date':days+'d')+'</span><button class="rm-btn" onclick="removeBucket(\''+target+'\','+idx+')">×</button></div>';
   }).join('');
   return '<div>'+items+'<button class="ghost-btn" style="margin-top:0;padding:.3rem .6rem" onclick="addBucket(\''+target+'\')">+ Bucket</button></div>';
 }
@@ -788,7 +905,7 @@ function renderPersonalTab(){
     ? ownBuckets.map(b=>{const d=b.date?daysBetween(todayLocal(),b.date):'';let cls='pill maturity-ok';if(d!==''&&d<0)cls='pill maturity-overdue';else if(d!==''&&d<=3)cls='pill maturity-urgent';else if(d!==''&&d<=14)cls='pill maturity-soon';return '<span class="'+cls+'" style="margin-right:3px">'+(b.amount||0)+' ORI · '+(d===''?'No date':d+'d')+'</span>';}).join('')
     : '—';
   const trOwn = document.createElement('tr');
-  trOwn.innerHTML='<td><span class="tag-good" style="font-size:10px;padding:2px 7px;border-radius:4px;font-family:var(--mono)">✓ Mine</span></td><td>My Wallet (primary)</td><td>—</td><td>Custom</td><td class="mono">'+fmt(ownBase,4)+'</td><td class="mono">'+fmt(ownInt,4)+'</td><td class="mono">'+fmt(ownPow,4)+'</td><td>'+ownBuckHTML+'</td>';
+  trOwn.innerHTML='<td><strong>My Wallet</strong> <span class="tag-good" style="font-size:9px;padding:1px 5px;border-radius:3px">Primary</span></td><td>—</td><td>Custom</td><td class="mono">'+fmt(ownBase,4)+'</td><td class="mono">'+fmt(ownInt,4)+'</td><td class="mono">'+fmt(ownPow,4)+'</td><td>'+ownBuckHTML+'</td>';
   tbody.appendChild(trOwn);
 
   members.forEach((m,i)=>{
@@ -798,7 +915,8 @@ function renderPersonalTab(){
       ? buckets.map(b=>{const d=b.date?daysBetween(todayLocal(),b.date):'';let cls='pill maturity-ok';if(d!==''&&d<0)cls='pill maturity-overdue';else if(d!==''&&d<=3)cls='pill maturity-urgent';else if(d!==''&&d<=14)cls='pill maturity-soon';return '<span class="'+cls+'" style="margin-right:3px">'+(b.amount||0)+' ORI · '+(d===''?'No date':d+'d')+'</span>';}).join('')
       : '—';
     const tr = document.createElement('tr');
-    tr.innerHTML='<td><label style="display:flex;align-items:center;gap:.4rem;cursor:pointer"><input type="checkbox"'+(m.mine?' checked':'')+' onchange="members['+i+'].mine=this.checked;saveMembersEdit();renderPersonalTab()"> <span style="font-size:11px;color:var(--text2)">Mine</span></label></td><td>'+escHtml(m.name||'')+'</td><td class="addr-cell" title="'+escHtml(m.addr||'')+'">'+escHtml(addrShort(m.addr))+'</td><td><span class="tier-badge">'+escHtml(m.tier||'360 Day')+'</span></td><td class="mono">'+fmt(m.base||0,4)+'</td><td class="mono">'+fmt(m.interest||0,4)+'</td><td class="mono">'+fmt(est,4)+'</td><td>'+buckHTML+'</td>';
+    if(!m.mine) return;
+    tr.innerHTML='<td>'+escHtml(m.name||'—')+(m.upline?'<br><span style="font-size:9px;color:var(--text3)">via '+escHtml(m.upline)+'</span>':'')+'</td><td class="addr-cell" title="'+escHtml(m.addr||'')+'">'+escHtml(addrShort(m.addr))+'</td><td><span class="tier-badge">'+escHtml(m.tier||'360 Day')+'</span></td><td class="mono">'+fmt(m.base||0,4)+'</td><td class="mono">'+fmt(m.interest||0,4)+'</td><td class="mono">'+fmt(est,4)+'</td><td>'+buckHTML+'</td>';
     tbody.appendChild(tr);
   });
 
