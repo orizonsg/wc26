@@ -691,12 +691,14 @@ function calc(){
 
 function renderMembers(){
   const tbody=document.getElementById('memberBody'); const empty=document.getElementById('memberEmpty'); tbody.innerHTML=''; empty.style.display=members.length===0?'block':'none';
+  document.getElementById('memberCount').textContent = members.length;
   members.forEach((m,i)=>{
     const est = projectedBalance(m);
     const decay=Math.pow(0.9,(m.level||1)-1);
     const qi = est*decay;
+    const uplineTxt = m.upline?'<br><span style="font-size:9px;color:var(--text3)">via '+escHtml(m.upline)+'</span>':'';
     const tr=document.createElement('tr');
-    tr.innerHTML='<td><span class="level-badge">'+(m.level||1)+'</span></td><td><input type="text" value="'+escHtml(m.name)+'" oninput="members['+i+'].name=this.value;saveMembersEdit()"></td><td title="'+escHtml(m.addr||'')+'"><span class="addr-cell">'+escHtml(addrShort(m.addr))+'</span></td><td><span class="tier-badge">'+escHtml(m.tier||'360 Day')+'</span></td><td class="mono">'+fmt(est,4)+'</td><td class="decay-cell">×'+decay.toFixed(3)+'</td><td class="qi-cell">'+fmt(qi,4)+'</td><td><button class="rm-btn" onclick="removeMember('+i+')">×</button></td>';
+    tr.innerHTML='<td><span class="level-badge">'+(m.level||1)+'</span></td><td>'+escHtml(m.name||'—')+uplineTxt+'</td><td title="'+escHtml(m.addr||'')+'"><span class="addr-cell">'+escHtml(addrShort(m.addr))+'</span></td><td><span class="tier-badge">'+escHtml(m.tier||'360 Day')+'</span></td><td class="mono">'+fmt(est,4)+'</td><td class="decay-cell">×'+decay.toFixed(3)+'</td><td class="qi-cell">'+fmt(qi,4)+'</td><td><button class="secondary-btn" style="padding:.2rem .55rem;font-size:11px" onclick="openEditMember('+i+')">Edit</button></td>';
     tbody.appendChild(tr);
   });
 }
