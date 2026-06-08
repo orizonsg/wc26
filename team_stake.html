@@ -94,7 +94,7 @@ td{padding:.45rem .75rem;vertical-align:middle}
 .mat-ok{color:var(--teal)}
 .mat-soon{color:var(--gold)}
 .mat-urgent{color:var(--red)}
-.mat-overdue{color:var(--red);text-decoration:line-through}
+.mat-overdue{color:#a78bfa;font-weight:600}
 /* row highlights */
 tr.row-soon td{background:rgba(240,180,41,.05)!important}
 tr.row-urgent td{background:rgba(224,82,82,.06)!important}
@@ -228,7 +228,9 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
     <div class="field-grid" style="grid-template-columns:1fr 1fr;margin-top:.75rem">
       <div class="field" id="uplineWrap" style="display:none">
         <label>Upline (who referred them)</label>
-        <input id="m_upline" placeholder="e.g. Alice">
+        <select id="m_upline">
+          <option value="">— select upline —</option>
+        </select>
         <div class="field-hint" id="uplineHint">Your Tier 1 member who brought this person in</div>
       </div>
       <div class="field" style="display:flex;align-items:center;gap:.6rem;padding-top:1.5rem">
@@ -289,6 +291,12 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
 
   <div class="card">
     <div class="card-title">Your Wallet</div>
+    <!-- Name field -->
+    <div class="field" style="max-width:280px;margin-bottom:.75rem">
+      <label>Your Name / Label</label>
+      <input id="ownName" placeholder="e.g. Darryl" oninput="state.own.name=this.value;saveState();renderAll()">
+      <div class="field-hint">Used as your label in Stake Tracker and Personal Stake</div>
+    </div>
     <!-- Single shared interest for own wallet -->
     <div class="field" style="max-width:280px;margin-bottom:.85rem">
       <label>Total Interest Earned ($ORI)</label>
@@ -329,7 +337,7 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
   <div class="metrics-grid">
     <div class="metric-card"><div class="m-label">Weight N</div><div class="m-val" id="nMetricVal">—</div><div class="m-sub" id="nMetricSub">N = 0.00001×K + 0.9</div></div>
     <div class="metric-card"><div class="m-label">Team Size</div><div class="m-val" id="teamSize">0</div><div class="m-sub">members across all levels</div></div>
-    <div class="metric-card"><div class="m-label">ΣQi — Team Power</div><div class="m-val" id="sumQi">0</div><div class="m-sub">decay-weighted sum</div></div>
+    <div class="metric-card"><div class="m-label">ΣQi — Team Power</div><div class="m-val" id="sumQi">0</div><div class="m-sub" id="teamQmaxSub">No team members yet</div></div>
     <div class="metric-card"><div class="m-label">Balance Factor B</div><div class="m-val" id="bVal">0.0000</div><div class="m-sub" id="bPct">0% of max B</div><div class="m-bar"><div class="m-bar-fill" id="bBar" style="width:0%"></div></div></div>
     <div class="metric-card"><div class="m-label">Weight M</div><div class="m-val" id="mVal">—</div><div class="m-sub">Qmax + ΣQi + B×Qmax</div></div>
   </div>
@@ -395,15 +403,35 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
 ═══════════════════════════════════════════════════════════ -->
 <div id="panel-tracker" class="panel">
   <div class="card">
-    <div class="card-title">All Stakes — My Wallet + Team</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.85rem">
+      <span class="card-title" style="margin-bottom:0">All Stakes — My Wallet + Team</span>
+      <div style="display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px">
+        <button id="tgl-summary" onclick="setTrackerView('summary')"
+          style="padding:.3rem .85rem;font-size:11px;font-weight:600;border-radius:5px;border:none;cursor:pointer;background:transparent;color:var(--text3);transition:all .15s">
+          Summary
+        </button>
+        <button id="tgl-details" onclick="setTrackerView('details')"
+          style="padding:.3rem .85rem;font-size:11px;font-weight:600;border-radius:5px;border:none;cursor:pointer;background:var(--teal);color:#000;transition:all .15s">
+          Details
+        </button>
+      </div>
+    </div>
     <div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:.75rem;font-size:10px">
       <span style="color:var(--text3)">Maturity:</span>
       <span style="color:var(--teal)">● 15+ days</span>
       <span style="color:var(--gold)">● 4–14 days (soon)</span>
       <span style="color:var(--red)">● 0–3 days (urgent)</span>
-      <span style="color:var(--red);text-decoration:line-through">● overdue</span>
+      <span style="color:#a78bfa">● fully vested</span>
     </div>
-    <div class="tbl-wrap">
+    <!-- Summary view table -->
+    <div class="tbl-wrap" id="trackerSummaryWrap" style="display:none">
+      <table>
+        <thead><tr><th>Type</th><th>Name</th><th>Address</th><th>Level</th><th>Total Base ($ORI)</th><th>Interest ($ORI)</th><th>Positions</th><th>Earliest Maturity</th><th>Status</th><th></th></tr></thead>
+        <tbody id="trackerSummaryBody"></tbody>
+      </table>
+    </div>
+    <!-- Details view table -->
+    <div class="tbl-wrap" id="trackerDetailsWrap">
       <table>
         <thead><tr><th>Type</th><th>Name</th><th>Address</th><th>Tier</th><th>Stake Base ($ORI)</th><th>Interest ($ORI)</th><th>Start Date</th><th>Maturity</th><th>Days Left</th><th>Level</th><th></th></tr></thead>
         <tbody id="trackerBody"></tbody>
@@ -426,15 +454,28 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
       <div class="ps-card"><h3>Total Interest Earned ($ORI)</h3><div class="ps-big" id="psTotalInterest" style="color:var(--gold)">0.0000</div><div class="ps-sub" id="psTotalInterestFiat">— USD · — SGD</div></div>
       <div class="ps-card"><h3>Other $ORI Earned</h3><div class="ps-big" id="psTotalOther" style="color:#a78bfa">0.0000</div><div class="ps-sub" id="psTotalOtherFiat">— USD · — SGD</div></div>
     </div>
-    <!-- Grand Total with USD + SGD -->
-    <div style="margin-top:.85rem;padding:.75rem 1.1rem;background:var(--surface2);border:1px solid var(--border2);border-radius:8px">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
-        <span style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)">Grand Total $ORI</span>
-        <span style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text1)" id="psGrandTotal">0.0000</span>
+    <!-- Grand Total — vibrant gradient card -->
+    <div style="margin-top:1rem;padding:1.1rem 1.4rem;
+      background:linear-gradient(135deg,rgba(0,212,180,.15) 0%,rgba(0,212,180,.05) 50%,rgba(240,180,41,.08) 100%);
+      border:1px solid rgba(0,212,180,.35);border-radius:10px;
+      box-shadow:0 0 24px rgba(0,212,180,.08),inset 0 1px 0 rgba(0,212,180,.15)">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--teal);margin-bottom:.5rem;opacity:.8">Grand Total $ORI Holdings</div>
+      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+        <span style="font-family:var(--mono);font-size:28px;font-weight:700;
+          background:linear-gradient(90deg,#00d4b4,#3ecf7e);
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+          background-clip:text" id="psGrandTotal">0.0000</span>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">$ORI</span>
       </div>
-      <div style="display:flex;gap:1.5rem;margin-top:.35rem;flex-wrap:wrap">
-        <span style="font-size:11px;font-family:var(--mono);color:var(--text3)" id="psGrandTotalUsd">— USD</span>
-        <span style="font-size:11px;font-family:var(--mono);color:var(--text3)" id="psGrandTotalSgd">— SGD</span>
+      <div style="display:flex;gap:1.25rem;margin-top:.6rem;flex-wrap:wrap;align-items:center">
+        <div style="padding:.3rem .7rem;background:rgba(0,212,180,.1);border:1px solid rgba(0,212,180,.2);border-radius:6px">
+          <span style="font-size:10px;color:var(--text3)">USD&nbsp;</span>
+          <span style="font-size:13px;font-family:var(--mono);font-weight:600;color:var(--teal)" id="psGrandTotalUsd">—</span>
+        </div>
+        <div style="padding:.3rem .7rem;background:rgba(240,180,41,.08);border:1px solid rgba(240,180,41,.2);border-radius:6px">
+          <span style="font-size:10px;color:var(--text3)">SGD&nbsp;</span>
+          <span style="font-size:13px;font-family:var(--mono);font-weight:600;color:var(--gold)" id="psGrandTotalSgd">—</span>
+        </div>
       </div>
     </div>
   </div>
@@ -479,7 +520,7 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
       <span class="hl">Daily Yield</span> = 0.8 × Rebase × (M / TotalCV)<br><br>
       <span class="hl">M (Weight)</span> = Qmax + ΣQi + B × Qmax<br><br>
       <span class="hl">Qi</span> = Qi_raw × decay_i &nbsp;&nbsp; <span class="hl2">decay_i</span> = 0.9 ^ (level − 1)<br><br>
-      <span class="hl">B (Balance Factor)</span> = min(ΣQi / Qmax, Bmax)<br><br>
+      <span class="hl">B (Balance Factor)</span> = min( (ΣQi / Qmax) × 0.33, 1.0 )  &nbsp;<span style="color:var(--text3)">(B ≤ 1)</span><br><br>
       <span class="hl">N (Weight)</span> = K / Qmax &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="hl2">K</span> = ORI_price × Qmax<br><br>
       <span class="hl2">TotalCV</span> = Sum of all addresses' contribution values on that day.
     </div>
@@ -515,7 +556,7 @@ tr.row-urgent td{background:rgba(224,82,82,.06)!important}
 // ═══════════════════════════════════════════════════════════════════════════════
 const LS = 'orizon_state_v3';
 let state = {
-  own:{ oriAmount:0, myInterest:0, qmax:0 },
+  own:{ oriAmount:0, myInterest:0, qmax:0, name:'' },
   ownStakes:[],
   members:[],
   rewards:[],
@@ -530,6 +571,7 @@ let ownStakes     = [];
 let livePrice     = 0;
 let sgdRate       = 0;
 let modalMode     = 'add';
+let trackerView   = 'details'; // 'summary' | 'details'
 let editIndex     = -1;
 let modalLevel    = 1;
 let modalStakes   = []; // [{tier,base,startDate,maturity}]
@@ -590,6 +632,7 @@ function loadState(){
   ownStakes     = Array.isArray(state.ownStakes)     ? state.ownStakes     : [];
   if(!ownStakes.length) ownStakes=[{tier:'360 Day',base:0,startDate:'',maturity:''}];
   if(state.own.myInterest) $('myInterest').value = state.own.myInterest;
+  if($('ownName')) $('ownName').value = state.own.name||'';
   $('rate360').value   = state.rates['360 Day'];
   $('rate180').value   = state.rates['180 Day'];
   $('rate90').value    = state.rates['90 Day'];
@@ -645,16 +688,18 @@ function recalcOwnQmax(){
 const TIERS = ['360 Day','180 Day','90 Day','Flexi'];
 
 function ownStakeRowHtml(s, idx){
+  const posNum = idx+1;
   const days = s.maturity ? daysBetween(todayLocal(), s.maturity) : null;
   const mc   = matCls(days);
-  return `<div class="stake-row ${mc.rowCls}" id="osr_${idx}">
-    <div class="field"><label>Tier</label>
-      <select onchange="ownStakes[${idx}].tier=this.value;autoOwnMaturity(${idx})">
+  return `<div class="stake-row ${mc.rowCls}" id="osr_${idx}" style="font-size:13px">
+    <div class="field">
+      <label style="font-size:11px;font-weight:700;color:var(--teal)">Position ${posNum}</label>
+      <select style="font-size:13px" onchange="ownStakes[${idx}].tier=this.value;autoOwnMaturity(${idx})">
         ${TIERS.map(t=>`<option${s.tier===t?' selected':''}>${t}</option>`).join('')}
       </select>
     </div>
     <div class="field"><label>Base ($ORI)</label>
-      <input type="number" value="${s.base||''}" placeholder="0" min="0" step="0.0001"
+      <input type="number" style="font-size:13px" value="${s.base||''}" placeholder="0" min="0" step="0.0001"
         oninput="ownStakes[${idx}].base=parseFloat(this.value)||0;recalcOwnQmax()">
     </div>
     <div class="field"><label>Start Date</label>
@@ -738,32 +783,44 @@ function removeOwnStake(idx){
 // MAIN CALC
 // ═══════════════════════════════════════════════════════════════════════════════
 function calc(){
-  const Qmax = parseFloat($('myQmax').value)||0;
-
   // K = USD value of ORI staked (stake base only, not interest)
   const oriAmt = parseFloat($('oriAmount').value)||0;
   const K = oriAmt * livePrice;
   // N = weight coefficient: 0.00001 × K + 0.9, capped at 1.0
   const N = Math.min(1.0, 0.00001 * K + 0.9);
 
-  let sumQi = 0;
-  members.forEach(m=>{
+  // Qmax = highest single member's decay-weighted Qi (NOT the user's own stake)
+  // ΣQi  = sum of all other members' decay-weighted Qi
+  let memberQis = members.map(m => {
     const est   = projectedBalance(m);
-    const decay = Math.pow(0.9,(m.level||1)-1);
-    sumQi += est * decay;
+    const decay = Math.pow(0.9, (m.level||1) - 1);
+    return est * decay;
   });
+  let teamQmax = 0, teamQmaxIdx = -1;
+  memberQis.forEach((qi,i) => { if(qi > teamQmax){ teamQmax=qi; teamQmaxIdx=i; } });
+  let sumQi = memberQis.reduce((s,qi,i) => i===teamQmaxIdx ? s : s+qi, 0);
 
-  const Bmax = 0.5;
-  const B    = Qmax > 0 ? Math.min(sumQi/Qmax, Bmax) : 0;
-  const Bpct = (B/Bmax*100).toFixed(1);
+  // B = (ΣQi / teamQmax) × 0.33, capped at 1.0
+  const B    = teamQmax > 0 ? Math.min(1.0, (sumQi / teamQmax) * 0.33) : 0;
+  const Bpct = (B * 100).toFixed(1);
   $('bVal').textContent = fmtN(B,4);
-  $('bPct').textContent = Bpct+'% of max B';
+  $('bPct').textContent = Bpct+'% of max (1.0)';
   $('bBar').style.width = Math.min(100,parseFloat(Bpct))+'%';
 
-  const M = Qmax + sumQi + B * Qmax;
+  const M = teamQmax + sumQi + B * teamQmax;
   $('mVal').textContent  = M ? fmtN(M,4) : '—';
   $('sumQi').textContent = fmtN(sumQi,4);
   $('teamSize').textContent = members.length;
+
+  // Show who is Qmax in the metrics sub-label
+  const qmEl = $('teamQmaxSub');
+  if(qmEl){
+    if(teamQmaxIdx>=0 && members[teamQmaxIdx]){
+      qmEl.textContent = 'Qmax: '+esc(members[teamQmaxIdx].name||'—')+' ('+fmtN(teamQmax,2)+')';
+    } else {
+      qmEl.textContent = 'No team members yet';
+    }
+  }
 
   // Update N metric card (nMetricVal added to metrics grid below)
   const nEl = $('nMetricVal');
@@ -823,10 +880,77 @@ function renderMembers(){
 // ═══════════════════════════════════════════════════════════════════════════════
 function matCls(days){
   if(days===null) return {cls:'',rowCls:'',str:'—'};
-  if(days<0)  return {cls:'mat-overdue',rowCls:'row-urgent',str:'OVERDUE'};
+  if(days<0)  return {cls:'mat-overdue',rowCls:'row-urgent',str:'Fully Vested'};
   if(days<=3) return {cls:'mat-urgent', rowCls:'row-urgent',str:days+'d'};
   if(days<=14)return {cls:'mat-soon',   rowCls:'row-soon',  str:days+'d'};
   return          {cls:'mat-ok',     rowCls:'',          str:days+'d'};
+}
+
+function setTrackerView(view){
+  trackerView = view;
+  $('tgl-summary').style.background = view==='summary' ? 'var(--teal)' : 'transparent';
+  $('tgl-summary').style.color      = view==='summary' ? '#000' : 'var(--text3)';
+  $('tgl-details').style.background = view==='details' ? 'var(--teal)' : 'transparent';
+  $('tgl-details').style.color      = view==='details' ? '#000' : 'var(--text3)';
+  $('trackerSummaryWrap').style.display = view==='summary' ? '' : 'none';
+  $('trackerDetailsWrap').style.display = view==='details' ? '' : 'none';
+  renderTracker();
+}
+
+function renderTrackerSummary(){
+  const tbody = $('trackerSummaryBody');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+
+  // Own wallet summary row
+  const ownInt  = parseFloat($('myInterest').value)||0;
+  const ownLabel = state.own.name||'My Wallet';
+  const ownBase  = ownStakes.reduce((s,p)=>s+(p.base||0),0);
+  // Earliest non-null, non-fully-vested maturity date
+  const ownMaturities = ownStakes.map(p=>p.maturity).filter(Boolean).sort();
+  const ownEarliest   = ownMaturities[0]||'';
+  const ownDays       = ownEarliest ? daysBetween(todayLocal(), ownEarliest) : null;
+  const ownMc         = matCls(ownDays);
+  const ownTr = document.createElement('tr');
+  ownTr.className = ownMc.rowCls;
+  ownTr.innerHTML =
+    '<td><span class="pill you">You</span></td>'
+   +'<td><strong>'+esc(ownLabel)+'</strong></td>'
+   +'<td>—</td>'
+   +'<td>—</td>'
+   +'<td class="mono" style="color:var(--teal)">'+fmtN(ownBase,4)+'</td>'
+   +'<td class="mono" style="color:var(--gold)">'+fmtN(ownInt,4)+'</td>'
+   +'<td class="mono">'+ownStakes.length+'</td>'
+   +'<td class="mono">'+(ownEarliest||'—')+'</td>'
+   +'<td class="mono '+ownMc.cls+'">'+ownMc.str+'</td>'
+   +'<td></td>';
+  tbody.appendChild(ownTr);
+
+  members.forEach((m,i)=>{
+    const stakeList=(m.stakes&&m.stakes.length>0)
+      ? m.stakes
+      : [{tier:m.tier||'360 Day',base:m.base||0,startDate:m.lastUpdated||'',maturity:m.maturity||''}];
+    const totalBase = stakeList.reduce((s,p)=>s+(p.base||0),0);
+    const maturities = stakeList.map(p=>p.maturity).filter(Boolean).sort();
+    const earliest   = maturities[0]||'';
+    const days       = earliest ? daysBetween(todayLocal(), earliest) : null;
+    const mc         = matCls(days);
+    const upline     = m.upline?'<br><span style="font-size:9px;color:var(--text3)">via '+esc(m.upline)+'</span>':'';
+    const tr = document.createElement('tr');
+    tr.className = mc.rowCls;
+    tr.innerHTML =
+      '<td><span class="pill">Team</span></td>'
+     +'<td>'+esc(m.name||'—')+upline+'</td>'
+     +'<td><span class="addr-cell" title="'+esc(m.addr||'')+'">'+esc(addrShort(m.addr))+'</span></td>'
+     +'<td><span class="level-badge">'+(m.level||1)+'</span></td>'
+     +'<td class="mono" style="color:var(--teal)">'+fmtN(totalBase,4)+'</td>'
+     +'<td class="mono" style="color:var(--gold)">'+fmtN(m.interest||0,4)+'</td>'
+     +'<td class="mono">'+stakeList.length+'</td>'
+     +'<td class="mono">'+(earliest||'—')+'</td>'
+     +'<td class="mono '+mc.cls+'">'+mc.str+'</td>'
+     +'<td><button class="secondary-btn" style="padding:.2rem .6rem;font-size:10px" onclick="openEditModal('+i+')">Edit</button></td>';
+    tbody.appendChild(tr);
+  });
 }
 
 function renderTracker(){
@@ -834,6 +958,7 @@ function renderTracker(){
   tbody.innerHTML='';
   // Own wallet — one row per stake position
   const ownInt=parseFloat($('myInterest').value)||0;
+  const ownLabel=state.own.name||'My Wallet';
   ownStakes.forEach((sp,si)=>{
     const days=sp.maturity?daysBetween(todayLocal(),sp.maturity):null;
     const mc=matCls(days);
@@ -841,7 +966,7 @@ function renderTracker(){
     tr.className=mc.rowCls;
     tr.innerHTML=
       '<td>'+(si===0?'<span class="pill you">You</span>':'')+'</td>'
-     +'<td>'+(si===0?'<strong>My Wallet</strong>':'<span style="color:var(--text3);font-size:10px">└ pos '+(si+1)+'</span>')+'</td>'
+     +'<td>'+(si===0?'<strong>'+esc(ownLabel)+'</strong>':'<span style="color:var(--text3);font-size:10px">└ '+(si+1)+'</span>')+'</td>'
      +'<td>—</td>'
      +'<td><span class="tier-badge">'+esc(sp.tier||'360 Day')+'</span></td>'
      +'<td class="mono">'+fmtN(sp.base||0,4)+'</td>'
@@ -865,7 +990,7 @@ function renderTracker(){
       const upline=(si===0&&m.upline)?'<br><span style="font-size:9px;color:var(--text3)">via '+esc(m.upline)+'</span>':'';
       const nameCell=si===0
         ? esc(m.name||'—')+upline
-        : '<span style="color:var(--text3);font-size:10px">└ pos '+(si+1)+'</span>';
+        : '<span style="color:var(--text3);font-size:10px">└ '+(si+1)+'</span>';
       const tr=document.createElement('tr');
       tr.className=mc.rowCls;
       // Interest shown only on first position row
@@ -885,6 +1010,8 @@ function renderTracker(){
       tbody.appendChild(tr);
     });
   });
+  // Also render summary view
+  renderTrackerSummary();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -897,9 +1024,10 @@ function renderPersonalTab(){
 
   // Primary wallet — one row per stake position
   const ownInt=parseFloat($('myInterest').value)||0;
+  const myLabel=state.own.name||'My Wallet';
   ownStakes.forEach((sp,si)=>{
     rows.push({
-      label:     'My Wallet'+(ownStakes.length>1?' pos '+(si+1):''),
+      label:     myLabel+(ownStakes.length>1?' '+(si+1):''),
       tier:      sp.tier||'360 Day',
       base:      sp.base||0,
       interest:  si===0?ownInt:0,
@@ -916,7 +1044,7 @@ function renderPersonalTab(){
       : [{tier:m.tier||'360 Day',base:m.base||0,startDate:m.lastUpdated||'',maturity:m.maturity||''}];
     stakeList.forEach((sp,si)=>{
       rows.push({
-        label: esc(m.name||'—')+(stakeList.length>1?' pos '+(si+1):''),
+        label: esc(m.name||'—')+(stakeList.length>1?' '+(si+1):''),
         tier:  sp.tier||'360 Day',
         base:  sp.base||0,
         interest: si===0 ? (m.interest||0) : 0, // show interest only on first position
@@ -958,8 +1086,8 @@ function renderPersonalTab(){
 
   const gtUsd = livePrice ? grand*livePrice : 0;
   const gtSgd = gtUsd&&sgdRate ? gtUsd*sgdRate : 0;
-  $('psGrandTotalUsd').textContent = gtUsd ? '$'+gtUsd.toFixed(2)+' USD' : '— USD';
-  $('psGrandTotalSgd').textContent = gtSgd ? 'S$'+gtSgd.toFixed(2)+' SGD' : '— SGD';
+  $('psGrandTotalUsd').textContent = gtUsd ? '$'+gtUsd.toFixed(2) : '—';
+  $('psGrandTotalSgd').textContent = gtSgd ? 'S$'+gtSgd.toFixed(2) : '—';
 
   renderOtherEarnings();
 }
@@ -1137,13 +1265,35 @@ function toggleUplineWrap(){
   if(modalLevel>1) $('uplineHint').textContent='Your Tier '+(modalLevel-1)+' member who brought this person in';
 }
 
+function populateUplineDropdown(selectedVal, excludeIdx=-1){
+  const sel=$('m_upline');
+  if(!sel) return;
+  sel.innerHTML='<option value="">— select upline —</option>';
+  // Include own name as option
+  const ownN=state.own.name||'My Wallet';
+  const ownOpt=document.createElement('option');
+  ownOpt.value=ownN; ownOpt.textContent='⭐ '+ownN+' (You)';
+  if(selectedVal===ownN) ownOpt.selected=true;
+  sel.appendChild(ownOpt);
+  // Add all members except the one being edited
+  members.forEach((m,i)=>{
+    if(i===excludeIdx) return;
+    const opt=document.createElement('option');
+    opt.value=m.name||'';
+    opt.textContent=m.name+(m.level?'  [L'+m.level+']':'');
+    if((m.name||'')===selectedVal) opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
 function openAddModal(){
   modalMode='add'; editIndex=-1; modalLevel=1;
   $('modalTitle').textContent='Add Team Member';
   $('modalSaveBtn').textContent='Add Member';
   $('modalDelBtn').style.display='none';
   $('deleteConfirmRow').style.display='none';
-  ['m_name','m_addr','m_upline','m_interest'].forEach(id=>{ if($(id)) $(id).value=''; });
+  ['m_name','m_addr','m_interest'].forEach(id=>{ if($(id)) $(id).value=''; });
+  populateUplineDropdown('');
   $('m_mine').checked=false;
   $('uplineWrap').style.display='none';
   modalStakes=[{tier:'360 Day',base:0,startDate:todayLocal(),maturity:''}];
@@ -1163,7 +1313,7 @@ function openEditModal(idx){
   $('m_name').value=m.name||'';
   $('m_addr').value=m.addr||'';
   $('m_interest').value=m.interest||'';
-  $('m_upline').value=m.upline||'';
+  populateUplineDropdown(m.upline||'', editIndex);
   $('m_mine').checked=m.mine||false;
   $('uplineWrap').style.display=modalLevel>1?'':'none';
   if(modalLevel>1) $('uplineHint').textContent='Your Tier '+(modalLevel-1)+' member who brought this person in';
@@ -1228,7 +1378,7 @@ function saveModal(){
     lastUpdated:todayLocal(),
     tier:modalStakes[0]?.tier||'360 Day',
     maturity:maturities[0]||'',
-    upline:$('m_upline').value.trim(),
+    upline:($('m_upline').value||'').trim(),
     mine:$('m_mine').checked,
     level:modalLevel,
     stakes:modalStakes.map(s=>({...s}))
