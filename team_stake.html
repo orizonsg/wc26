@@ -1297,6 +1297,7 @@ function openAddModal(){
   $('m_mine').checked=false;
   $('uplineWrap').style.display='none';
   modalStakes=[{tier:'360 Day',base:0,startDate:todayLocal(),maturity:''}];
+  refreshStakeRows();   // clear any leftover rows from previous edit
   autoMaturity(0);
   buildLevelGrid(1);
   $('memberModal').classList.add('open');
@@ -1438,19 +1439,16 @@ async function syncPush(silent=false){
   const url=($('syncUrl')&&$('syncUrl').value.trim())||state.syncUrl;
   if(!url){ if(!silent) $('syncStatus').textContent='No URL set.'; return; }
   try{
-    // Apps Script expects { action:'push', data:..., updatedAt:... }
-    // mode:'no-cors' is required for POST to Apps Script from browser
-    // (response will be opaque — we cant read it, but the write still succeeds)
-    await fetch(url, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'push',
-        data: state,
-        updatedAt: new Date().toISOString()
-      })
-    });
+    // POST with no-cors strips the body — use GET with URL-encoded payload instead.
+    // Apps Script doGet receives it via e.parameter.payload.
+    const payload = encodeURIComponent(JSON.stringify({
+      action: 'push',
+      data: state,
+      updatedAt: new Date().toISOString()
+    }));
+    const res = await fetch(url + '?payload=' + payload);
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.msg||'Unknown error');
     if(!silent) $('syncStatus').textContent='Pushed at '+new Date().toLocaleTimeString();
   }catch(e){ if(!silent) $('syncStatus').textContent='Push failed: '+e.message; }
 }
@@ -1512,16 +1510,19 @@ function dpOpen(inputEl, callback){
   dpYear  = base.getFullYear();
   dpMonth = base.getMonth();
   dpRender();
-  // Position the calendar below the input
+  // Position the calendar below the input using viewport coords (fixed positioning)
   const cal = $('dpCal');
   cal.classList.add('open');
   const rect = inputEl.getBoundingClientRect();
-  let top  = rect.bottom + window.scrollY + 4;
-  let left = rect.left  + window.scrollX;
-  // Keep within viewport
-  const calW = 260;
-  if(left + calW > window.innerWidth) left = window.innerWidth - calW - 8;
-  if(top + 320 > window.innerHeight + window.scrollY) top = rect.top + window.scrollY - 325;
+  const calW = 262, calH = 310;
+  let top  = rect.bottom + 6;
+  let left = rect.left;
+  // Keep within viewport horizontally
+  if(left + calW > window.innerWidth - 8) left = window.innerWidth - calW - 8;
+  if(left < 8) left = 8;
+  // Flip above input if not enough room below
+  if(top + calH > window.innerHeight - 8) top = rect.top - calH - 4;
+  if(top < 8) top = 8;
   cal.style.top  = top  + 'px';
   cal.style.left = left + 'px';
 }
@@ -1596,12 +1597,15 @@ function dpNav(dir){
 function dpToday(){
   const t=new Date(); dpYear=t.getFullYear(); dpMonth=t.getMonth(); dpRender();
 }
-// Close on outside click
+// Close on outside click — but not if click is inside the modal or the calendar
 document.addEventListener('click', e=>{
   const cal=$('dpCal');
   if(!cal.classList.contains('open')) return;
   if(cal.contains(e.target)) return;
   if(dpTarget && dpTarget.contains(e.target)) return;
+  // If calendar was opened from inside the modal, don't let modal overlay close it
+  const modal=$('memberModal');
+  if(modal && modal.contains(e.target)) return;
   dpClose();
 }, true);
 
