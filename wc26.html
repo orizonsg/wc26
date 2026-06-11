@@ -1655,9 +1655,9 @@ function renderGroups(){
       }
       const timeStr=fix?`<div class="match-time" style="display:flex;justify-content:space-between;align-items:center;">${fix[0]} · ${fix[1]}${lockBadge?'<span>'+lockBadge+'</span>':''}</div>`:'';
       const dis=locked?'disabled style="opacity:.45;cursor:not-allowed;"':'';
-      const onclick_home=locked?'':``pickGroup('${m.id}','home')``;
-      const onclick_draw=locked?'':``pickGroup('${m.id}','draw')``;
-      const onclick_away=locked?'':``pickGroup('${m.id}','away')``;
+      const onclick_home=locked?'':("pickGroup('"+m.id+"','home')");
+      const onclick_draw=locked?'':("pickGroup('"+m.id+"','draw')");
+      const onclick_away=locked?'':("pickGroup('"+m.id+"','away')");
       html+=`<div class="match-block">
         ${timeStr}
         <div class="match-row">
