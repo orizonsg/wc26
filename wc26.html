@@ -511,7 +511,9 @@ body::-webkit-scrollbar{display:none;}
   <div id="tab-groups" class="section" style="display:none;">
     <div class="s-hero">
       <div class="s-title">Group <span class="accent">Stage</span></div>
-      <div class="s-desc">Pick the result for every group match — home win, draw, or away win.</div>
+      <div class="s-desc">Pick the result for every group match — home win, draw, or away win.<br>
+        <span style="color:var(--teal);font-weight:500;">Each match locks 2 hours before kickoff.</span>
+      </div>
       <div id="countdown-groups"></div>
     </div>
     <div id="user-bar-groups"></div>
@@ -676,8 +678,9 @@ body::-webkit-scrollbar{display:none;}
     </div>
     <div class="card" style="margin-top:1.5rem;max-width:560px;">
       <div class="card-title">Deadlines</div>
-      <div class="deadline-item"><span class="dl-label">Group Stage, Group Table & Champion picks</span><span class="dl-date">12 Jun · 02:55 SGT</span></div>
-      <div class="deadline-item"><span class="dl-label">Knockout Stage predictions</span><span class="dl-date">Opens per round</span></div>
+      <div class="deadline-item"><span class="dl-label">Group Table, Champion &amp; Awards picks</span><span class="dl-date">12 Jun · 02:55 SGT</span></div>
+      <div class="deadline-item"><span class="dl-label">Group Stage picks</span><span class="dl-date">2 hours before each match</span></div>
+      <div class="deadline-item"><span class="dl-label">Knockout Stage picks</span><span class="dl-date">2 hours before each match</span></div>
     </div>
   </div>
 
@@ -871,8 +874,9 @@ body::-webkit-scrollbar{display:none;}
     </div>
     <div class="card" style="margin-top:1.5rem;max-width:560px;">
       <div class="card-title">Deadlines</div>
-      <div class="deadline-item"><span class="dl-label">Group Stage, Group Table & Champion picks</span><span class="dl-date">12 Jun · 02:55 SGT</span></div>
-      <div class="deadline-item"><span class="dl-label">Knockout Stage predictions</span><span class="dl-date">Opens per round</span></div>
+      <div class="deadline-item"><span class="dl-label">Group Table, Champion &amp; Awards picks</span><span class="dl-date">12 Jun · 02:55 SGT</span></div>
+      <div class="deadline-item"><span class="dl-label">Group Stage picks</span><span class="dl-date">2 hours before each match</span></div>
+      <div class="deadline-item"><span class="dl-label">Knockout Stage picks</span><span class="dl-date">2 hours before each match</span></div>
     </div>
   </div>
 
@@ -1109,6 +1113,32 @@ function flagImg(team){
 const PICKS_DEADLINE  = new Date('2026-06-12T02:55:00+08:00'); // Group Stage, Table, Champion & Awards lock (5 mins before first match)
 const KO_UNLOCK_DATE  = new Date('2026-06-28T00:00:00+08:00'); // Knockout opens after group stage
 function picksLocked(){ return new Date() >= PICKS_DEADLINE; }
+
+// ── Per-match locking: 2 hours before each kickoff ──
+const MONTHS_MAP={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+function parseFixtureDate(dateStr,timeStr){
+  const [day,mon]=dateStr.split(' ');
+  const [hh,mm]=timeStr.replace(' SGT','').split(':').map(Number);
+  return new Date(Date.UTC(2026,MONTHS_MAP[mon],parseInt(day),hh-8,mm,0));
+}
+function getMatchKickoff(matchId){
+  const fix=FIXTURES[matchId];
+  if(!fix)return PICKS_DEADLINE;
+  return parseFixtureDate(fix[0],fix[1]);
+}
+function getMatchLockTime(matchId){
+  return new Date(getMatchKickoff(matchId).getTime()-2*60*60*1000);
+}
+function matchLocked(matchId){ return new Date()>=getMatchLockTime(matchId); }
+function timeUntilLock(matchId){
+  const diff=getMatchLockTime(matchId)-new Date();
+  if(diff<=0)return null;
+  const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+  if(h>=24){const d=Math.floor(h/24);return d+'d '+(h%24)+'h';}
+  if(h>0)return h+'h '+m+'m';
+  if(m>0)return m+'m '+s+'s';
+  return s+'s';
+}
 function koUnlocked(){  return new Date() >= KO_UNLOCK_DATE; }
 
 function cdStr(target){
@@ -1131,12 +1161,12 @@ function renderCountdown(elId, deadline, label){
   }
 }
 function startCountdowns(){
-  renderCountdown('countdown-groups',   PICKS_DEADLINE, 'Group Stage');
+  renderGroupStageCountdown();
   renderCountdown('countdown-grouptable', PICKS_DEADLINE, 'Group Table');
   renderCountdown('countdown-champion', PICKS_DEADLINE, 'Champion');
   renderCountdown('countdown-awards',   PICKS_DEADLINE, 'Awards');
   setInterval(()=>{
-    renderCountdown('countdown-groups',   PICKS_DEADLINE, 'Group Stage');
+    renderGroupStageCountdown();
     renderCountdown('countdown-grouptable', PICKS_DEADLINE, 'Group Table');
     renderCountdown('countdown-champion', PICKS_DEADLINE, 'Champion');
     renderCountdown('countdown-awards',   PICKS_DEADLINE, 'Awards');
@@ -1613,14 +1643,27 @@ function renderGroups(){
       const p=predictions.groups[m.id];
       const fh=flagImg(m.home);const fa=flagImg(m.away);
       const fix=getFixture(m.home,m.away);
-      const timeStr=fix?`<div class="match-time">${fix[0]} · ${fix[1]}</div>`:''; 
-      const dis=picksLocked()?'disabled style="opacity:.5;cursor:not-allowed;"':'';
+      const locked=matchLocked(m.id);
+      const countdown=timeUntilLock(m.id);
+      // Lock badge: show 'Locked' or 'Locks in Xh Ym' when close
+      let lockBadge='';
+      if(locked){
+        lockBadge=`<span style="font-size:9px;color:var(--red);letter-spacing:.1em;font-weight:600;">🔒 LOCKED</span>`;
+      } else if(countdown){
+        const urgent=getMatchLockTime(m.id)-new Date()<6*3600000; // <6h = show warning
+        lockBadge=urgent?`<span style="font-size:9px;color:var(--gold);letter-spacing:.08em;">⏱ locks in ${countdown}</span>`:'';
+      }
+      const timeStr=fix?`<div class="match-time" style="display:flex;justify-content:space-between;align-items:center;">${fix[0]} · ${fix[1]}${lockBadge?'<span>'+lockBadge+'</span>':''}</div>`:'';
+      const dis=locked?'disabled style="opacity:.45;cursor:not-allowed;"':'';
+      const onclick_home=locked?'':``pickGroup('${m.id}','home')``;
+      const onclick_draw=locked?'':``pickGroup('${m.id}','draw')``;
+      const onclick_away=locked?'':``pickGroup('${m.id}','away')``;
       html+=`<div class="match-block">
         ${timeStr}
         <div class="match-row">
-          <button class="pick-btn team-pick ${p==='home'?'sel':''}" ${dis} onclick="${picksLocked()?'':`pickGroup('${m.id}','home')`}">${fh}${shortName(m.home)}</button>
-          <button class="pick-btn draw ${p==='draw'?'sel':''}" ${dis} onclick="${picksLocked()?'':`pickGroup('${m.id}','draw')`}">Draw</button>
-          <button class="pick-btn team-pick ${p==='away'?'sel':''}" ${dis} onclick="${picksLocked()?'':`pickGroup('${m.id}','away')`}">${fa}${shortName(m.away)}</button>
+          <button class="pick-btn team-pick ${p==='home'?'sel':''}" ${dis} onclick="${onclick_home}">${fh}${shortName(m.home)}</button>
+          <button class="pick-btn draw ${p==='draw'?'sel':''}" ${dis} onclick="${onclick_draw}">Draw</button>
+          <button class="pick-btn team-pick ${p==='away'?'sel':''}" ${dis} onclick="${onclick_away}">${fa}${shortName(m.away)}</button>
         </div>
       </div>`;
     });
@@ -1629,10 +1672,9 @@ function renderGroups(){
   html+='</div>';
   document.getElementById('groups-content').innerHTML=html;
   document.getElementById('user-bar-groups').innerHTML=userBarHTML();
-  const gsBtn=document.querySelector('#tab-groups .save-btn');
-  if(gsBtn)gsBtn.style.display=picksLocked()?'none':'inline-block';
 }
 function pickGroup(id,val){
+  if(matchLocked(id)){showToast('This match is locked','err');return;}
   predictions.groups[id]=val;renderGroups();
 }
 
