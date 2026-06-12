@@ -529,6 +529,9 @@ body::-webkit-scrollbar{display:none;}
       <div id="countdown-grouptable"></div>
     </div>
     <div id="user-bar-grouptable"></div>
+    <div id="grouptable-lock-msg" style="display:none;align-items:center;gap:10px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.2);border-radius:var(--r);padding:10px 16px;margin-bottom:1rem;font-size:13px;color:var(--red);font-weight:500;">
+      🔒 Group Table picks are locked — predictions closed 12 Jun · 02:55 SGT
+    </div>
     <div id="grouptable-content"></div>
     <button class="save-pill" onclick="savePredictions()" id="grouptable-save-btn" style="margin-top:1rem;">Save group table picks</button>
   </div>
@@ -557,7 +560,10 @@ body::-webkit-scrollbar{display:none;}
       <div class="card champ-card">
         <div class="card-title">Your champion pick</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:14px;font-weight:300;">Select the team you believe will win the FIFA World Cup 2026.</p>
-        <select class="champ-select" id="champ-sel">
+        <div id="champion-lock-msg" style="display:none;align-items:center;gap:10px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.2);border-radius:var(--r);padding:10px 16px;margin-bottom:14px;font-size:13px;color:var(--red);font-weight:500;">
+        🔒 Champion pick is locked — predictions closed 12 Jun · 02:55 SGT
+      </div>
+      <select class="champ-select" id="champ-sel">
           <option value="">-- Select a team --</option>
         </select>
       </div>
@@ -573,6 +579,9 @@ body::-webkit-scrollbar{display:none;}
       <div id="countdown-awards"></div>
     </div>
     <div id="user-bar-awards"></div>
+    <div id="awards-lock-msg" style="display:none;align-items:center;gap:10px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.2);border-radius:var(--r);padding:10px 16px;margin-bottom:1rem;font-size:13px;color:var(--red);font-weight:500;">
+      🔒 Award picks are locked — predictions closed 12 Jun · 02:55 SGT
+    </div>
     <div class="awards-grid">
       <div class="card awards-card">
         <div class="card-title">🥅 Golden Glove</div>
@@ -1122,7 +1131,13 @@ function parseFixtureDate(dateStr,timeStr){
   return new Date(Date.UTC(2026,MONTHS_MAP[mon],parseInt(day),hh-8,mm,0));
 }
 function getMatchKickoff(matchId){
-  const fix=FIXTURES[matchId];
+  // matchId format: 'GROUP_i_j' — resolve to team names via GROUPS
+  const parts=matchId.split('_');
+  const grp=parts[0], i=parseInt(parts[1]), j=parseInt(parts[2]);
+  const teams=GROUPS[grp];
+  if(!teams)return PICKS_DEADLINE;
+  const home=teams[i], away=teams[j];
+  const fix=getFixture(home,away);
   if(!fix)return PICKS_DEADLINE;
   return parseFixtureDate(fix[0],fix[1]);
 }
@@ -1684,6 +1699,8 @@ function renderGroupTable(){
   const locked=picksLocked();
   const btn=document.getElementById('grouptable-save-btn');
   if(btn)btn.style.display=locked?'none':'inline-flex';
+  const gtLockMsg=document.getElementById('grouptable-lock-msg');
+  if(gtLockMsg)gtLockMsg.style.display=locked?'flex':'none';
   let html='<div class="gt-grid">';
   Object.entries(GROUPS).forEach(([g,teams])=>{
     // Validate saved: must be array of 4 unique team names from this group
@@ -1828,6 +1845,8 @@ function renderChampion(){
   const champBtn=document.querySelector('#tab-champion .save-btn');
   if(champBtn)champBtn.style.display=locked?'none':'block';
   document.getElementById('user-bar-champion').innerHTML=userBarHTML();
+  const champLockMsg=document.getElementById('champion-lock-msg');
+  if(champLockMsg)champLockMsg.style.display=locked?'flex':'none';
 }
 
 // ══════════════════ LEADERBOARD ══════════════════
@@ -1835,6 +1854,8 @@ async function renderLeaderboard(){
   const el=document.getElementById('lb-content');
   el.innerHTML='<div class="loading">Loading community standings...</div>';
   document.getElementById('user-bar-leaderboard').innerHTML=userBarHTML();
+  const freshResults=await sheetsGet('results','official');
+  if(freshResults&&typeof freshResults==='object')results=freshResults;
   const allUsers=await sheetsAll('users');
   const allPreds=await sheetsAll('predictions');
   if(!allUsers){
@@ -2009,6 +2030,8 @@ function renderAwards(){
   const hint=document.getElementById('awards-hint');
   if(btn)btn.style.display=locked?'none':'inline-block';
   if(hint)hint.style.display=locked?'block':'none';
+  const awLockMsg=document.getElementById('awards-lock-msg');
+  if(awLockMsg)awLockMsg.style.display=locked?'flex':'none';
   renderCountdown('countdown-awards',PICKS_DEADLINE,'Awards');
 }
 async function saveAwards(){
