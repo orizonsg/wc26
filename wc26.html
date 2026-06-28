@@ -1101,6 +1101,46 @@ function doPost(e) { return doGet(e); }</textarea>
         <p id="last-fetch-time" style="font-size:10px;color:var(--muted2);margin-top:4px;letter-spacing:.04em;"></p>
       </div>
 
+      <!-- KO SCHEDULE ADMIN -->
+      <div class="card" style="max-width:560px;margin-bottom:12px;">
+        <div class="card-title">⚽ Knockout Match Schedule</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;font-weight:300;">Add confirmed knockout matches so members can pick the advancing team. Add each match once both teams are known.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <label style="font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Round</label>
+            <select id="ko-round-sel" style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.15);color:var(--text);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;">
+              <option value="r32">Round of 32</option>
+              <option value="r16">Round of 16</option>
+              <option value="qf">Quarter-finals</option>
+              <option value="sf">Semi-finals</option>
+              <option value="3p">3rd Place</option>
+              <option value="f">Final</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Kickoff (SGT)</label>
+            <input type="datetime-local" id="ko-kickoff" style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.15);color:var(--text);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;"/>
+          </div>
+          <div>
+            <label style="font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Team A (left button)</label>
+            <select id="ko-teamA" style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.15);color:var(--text);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;">
+              <option value="">Select team...</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Team B (right button)</label>
+            <select id="ko-teamB" style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.15);color:var(--text);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;">
+              <option value="">Select team...</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button onclick="adminAddKOMatch()" style="padding:8px 20px;border-radius:var(--r);background:rgba(0,200,180,0.1);border:1px solid rgba(0,200,180,0.3);color:var(--teal2);font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;">+ Add Match</button>
+          <button onclick="adminClearKORound()" style="padding:8px 20px;border-radius:var(--r);background:rgba(255,68,102,0.08);border:1px solid rgba(255,68,102,0.2);color:var(--red);font-family:var(--font-b);font-size:13px;cursor:pointer;">Clear Round</button>
+        </div>
+        <div id="ko-schedule-preview" style="margin-top:1rem;font-size:12px;color:var(--muted2);">No knockout matches added yet.</div>
+      </div>
+
       <div class="card">
         <div class="card-title">Manual result entry</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;font-weight:300;">Manually override any result if needed. Auto-fetch handles this automatically once matches are finished.</p>
