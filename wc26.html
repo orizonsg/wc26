@@ -2121,9 +2121,12 @@ function swapKOTeams(){
 function renderKOSchedulePreview(){
   const el=document.getElementById('ko-schedule-preview');
   if(!el)return;
-  const sched=results.ko_schedule||{};
+  const sched=(results&&results.ko_schedule)||{};
   const total=Object.values(sched).reduce((s,arr)=>s+(arr||[]).length,0);
-  if(!total){el.innerHTML='<span style="color:var(--muted2);">No knockout matches added yet.</span>';return;}
+  if(!total){
+    el.innerHTML='<span style="color:var(--muted2);">No knockout matches added yet — or still loading. Try switching tabs and back.</span>';
+    return;
+  }
   let html='';
   KO_ROUNDS.forEach(r=>{
     const ms=sched[r.id]||[];
@@ -2154,7 +2157,8 @@ function renderKOSchedulePreview(){
 // ── GROUP TABLE ADMIN ──
 function renderGTAdmin(){
   const grp = document.getElementById('gt-group-sel')?.value || 'A';
-  const teams = GROUPS[grp] || [];
+  const teams = (typeof GROUPS !== 'undefined' && GROUPS[grp]) ? GROUPS[grp] : [];
+  if(!teams.length){ console.warn('renderGTAdmin: GROUPS not ready'); return; }
   // Current saved result for this group
   const saved = (results['table_'+grp]) || [...teams];
   const el = document.getElementById('gt-admin-content');
@@ -2335,6 +2339,18 @@ function showTab(id,btn){
   if(id==='admin'){
     document.getElementById('sheets-url').value=sheetsUrl;
     if(sheetsUrl){document.getElementById('admin-results').style.display='block';renderAdminMatches();}
+    // Refresh results from sheets so KO schedule + GT results are current
+    sheetsGet('results','official').then(res=>{
+      if(res&&typeof res==='object') results=res;
+      renderKOSchedulePreview();
+      renderGTAdmin();
+      // Populate KO team selects
+      ['ko-teamA','ko-teamB'].forEach(sid=>{
+        const s=document.getElementById(sid);
+        if(s&&s.options.length<=1)
+          s.innerHTML='<option value="">Select team...</option>'+ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join('');
+      });
+    });
     if(!adminWallet){
       document.getElementById('sheets-status').innerHTML=
         '<button class="save-btn blue" onclick="setAdminWallet()" style="margin-top:10px;font-size:11px;padding:6px 16px;">Set my wallet as admin</button>';
