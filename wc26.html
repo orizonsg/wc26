@@ -1175,6 +1175,15 @@ function doPost(e) { return doGet(e); }</textarea>
         <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;font-weight:300;">Manually override any result if needed. Auto-fetch handles this automatically once matches are finished.</p>
         <div id="admin-matches"></div>
         <button class="save-btn blue" onclick="saveResults()" style="margin-top:1rem;">Save results & recalculate</button>
+
+        <!-- KO Match Results -->
+        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid rgba(0,200,180,0.1);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-family:var(--font-d);font-size:10px;letter-spacing:.14em;color:var(--teal);text-transform:uppercase;">Knockout Match Results</div>
+            <button onclick="refreshKOPreview()" style="padding:4px 12px;border-radius:20px;background:rgba(0,200,180,0.08);border:1px solid rgba(0,200,180,0.2);color:var(--teal2);font-size:11px;cursor:pointer;font-family:var(--font-b);">↻ Refresh</button>
+          </div>
+          <div id="ko-schedule-preview" style="font-size:12px;color:var(--muted2);">Click Refresh to load knockout matches.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2189,6 +2198,18 @@ async function saveGTResult(){
   showToast('Group '+grp+' standings saved!');
 }
 
+async function refreshKOPreview(){
+  const el=document.getElementById('ko-schedule-preview');
+  if(el)el.innerHTML='<span style="color:var(--muted2);">Loading...</span>';
+  try{
+    const fresh=await sheetsGet('results','official');
+    if(fresh&&typeof fresh==='object'){
+      results=fresh;
+      showToast('Results refreshed!');
+    }
+  }catch(e){}
+  renderKOSchedulePreview();
+}
 async function setKOWinner(key,team){
   if(!team)return;
   results[key]=team;
@@ -2340,17 +2361,20 @@ function showTab(id,btn){
     document.getElementById('sheets-url').value=sheetsUrl;
     if(sheetsUrl){document.getElementById('admin-results').style.display='block';renderAdminMatches();}
     // Refresh results from sheets so KO schedule + GT results are current
-    sheetsGet('results','official').then(res=>{
-      if(res&&typeof res==='object') results=res;
+    // Refresh results then render all admin previews
+    (async()=>{
+      try{
+        const fresh=await sheetsGet('results','official');
+        if(fresh&&typeof fresh==='object') results=fresh;
+      }catch(e){}
       renderKOSchedulePreview();
       renderGTAdmin();
-      // Populate KO team selects
       ['ko-teamA','ko-teamB'].forEach(sid=>{
         const s=document.getElementById(sid);
         if(s&&s.options.length<=1)
           s.innerHTML='<option value="">Select team...</option>'+ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join('');
       });
-    });
+    })();
     if(!adminWallet){
       document.getElementById('sheets-status').innerHTML=
         '<button class="save-btn blue" onclick="setAdminWallet()" style="margin-top:10px;font-size:11px;padding:6px 16px;">Set my wallet as admin</button>';
