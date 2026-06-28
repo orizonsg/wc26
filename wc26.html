@@ -231,6 +231,36 @@ body::-webkit-scrollbar{display:none;}
 .team-pick{font-size:11px;padding:5px 10px;flex:1;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 
 /* ─── KNOCKOUT ─── */
+.round-section{margin-bottom:1.75rem;}
+.round-hd-wrap{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:.75rem;}
+.round-pts{font-size:10px;color:var(--muted2);letter-spacing:.08em;}
+.ko-match-card{
+  background:var(--surface);border:1px solid rgba(0,200,180,0.1);
+  border-radius:var(--r2);padding:1rem 1.25rem;margin-bottom:.75rem;
+}
+.ko-match-card.locked{opacity:.75;}
+.ko-match-card.tbd{opacity:.45;}
+.ko-match-time{font-size:11px;color:var(--muted2);margin-bottom:10px;letter-spacing:.06em;}
+.ko-match-row{display:flex;align-items:center;gap:10px;}
+.ko-team-btn{
+  flex:1;padding:10px 8px;border-radius:var(--r);
+  background:var(--surface2);border:1px solid rgba(0,200,180,0.15);
+  color:var(--text);font-family:var(--font-b);font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.ko-team-btn:hover:not(:disabled){border-color:rgba(0,200,180,0.4);background:rgba(0,200,180,0.06);}
+.ko-team-btn.sel{background:rgba(0,200,180,0.15);border-color:var(--teal);color:var(--teal2);font-weight:600;}
+.ko-team-btn:disabled,.ko-team-btn.disabled{opacity:.4;cursor:not-allowed;}
+.ko-vs{font-size:10px;color:var(--muted2);letter-spacing:.1em;white-space:nowrap;flex-shrink:0;}
+.ko-pick-note{font-size:11px;color:var(--muted2);margin-top:8px;font-weight:300;}
+.ko-tbd-card{
+  background:var(--surface2);border:1px dashed rgba(255,255,255,0.08);
+  border-radius:var(--r2);padding:1.5rem;text-align:center;margin-bottom:.75rem;
+}
+.ko-tbd-icon{font-size:28px;margin-bottom:6px;}
+.ko-tbd-label{font-size:12px;color:var(--muted2);font-weight:300;}
+.ko-tbd-note{font-size:11px;color:var(--muted2);text-align:center;margin-top:6px;font-weight:300;}
+/* ─── KNOCKOUT OLD ─── */
 .round-hd{
   font-family:var(--font-d);font-size:11px;font-weight:500;
   color:var(--muted);letter-spacing:.12em;text-transform:uppercase;
@@ -1202,7 +1232,8 @@ async function silentFetch(){
   const key=localStorage.getItem('orizon_fdorg_key');
   if(!key)return;
   try{
-    const r=await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED',{
+    // Routed through Cloudflare Worker to avoid CORS issues
+    const r=await fetch(SHEETS_WORKER+'/football/v4/competitions/WC/matches?status=FINISHED',{
       headers:{'X-Auth-Token':key}
     });
     if(!r.ok)return;
@@ -1450,6 +1481,13 @@ function showMainApp(){
   document.getElementById('username-modal').style.display='none';
   document.getElementById('tabs').style.display='flex';
   renderGroups();renderGroupTable();renderKnockout();renderChampion();renderAwards();
+  // Populate KO team selects
+  ['ko-teamA','ko-teamB'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(sel){
+      sel.innerHTML='<option value="">Select team...</option>'+ALL_TEAMS.map(t=>`<option value="${t}">${t}</option>`).join('');
+    }
+  });
   showTab('groups',document.querySelector('.tab'));
   startCountdowns();
 }
@@ -1584,11 +1622,18 @@ function calcScore(p){
       if(team&&actual[i]&&team===actual[i])pts+=(i===0?3:2);
     });
   });
-  // Knockout: points vary by round
+  // Knockout: check against ko_schedule winning teams
   const ko=p.knockout||{};
+  const sched=results.ko_schedule||{};
   Object.keys(ko).forEach(k=>{
-    if(ko[k]&&results[k]&&results[k]===ko[k]){
-      const round=k.split('_')[0];
+    const pick=ko[k];
+    if(!pick)return;
+    const parts=k.split('_');
+    const round=parts[0], matchIdx=parseInt(parts[1]);
+    const match=(sched[round]||[])[matchIdx];
+    // result winner stored as results[k] = winning team name
+    const winner=results[k]||null;
+    if(winner&&pick===winner){
       pts+=(KO_PTS[round]||4);
     }
   });
@@ -1806,31 +1851,71 @@ function getDragAfter(list,y){
 function renderKnockout(){
   const el=document.getElementById('knockout-content');
   document.getElementById('user-bar-knockout').innerHTML=userBarHTML();
-  if(!koUnlocked()){
-    const d=KO_UNLOCK_DATE;
-    const opts={day:'numeric',month:'long',year:'numeric'};
-    const dateStr=d.toLocaleDateString('en-SG',opts);
-    el.innerHTML=`<div class="ko-lock-card">
-      <div class="ko-lock-icon">🔒</div>
-      <div class="ko-lock-title">Knockout stage locked</div>
-      <div class="ko-lock-desc">Knockout predictions open on <strong>${dateStr}</strong> after the group stage concludes.<br>Come back then to pick your bracket!</div>
-    </div>`;
-    return;
-  }
+  const schedule=results.ko_schedule||{};
   let html='';
   KO_ROUNDS.forEach(r=>{
-    html+=`<div class="round-hd">${r.label}</div><div class="ko-grid">`;
-    for(let i=0;i<r.count;i++){
-      const key=`${r.id}_${i}`;const saved=predictions.knockout[key]||'';
-      html+=`<div class="ko-cell"><label>Match ${i+1} — advancing team</label>
-        <select onchange="predictions.knockout['${key}']=this.value">
-          <option value="">Select team...</option>
-          ${ALL_TEAMS.map(t=>`<option value="${t}"${saved===t?' selected':''}>${t}</option>`).join('')}
-        </select></div>`;
+    const matches=schedule[r.id]||[];
+    const now=new Date();
+    // Round section
+    let roundHtml=`<div class="round-section">
+      <div class="round-hd-wrap">
+        <div class="round-hd">${r.label}</div>
+        <div class="round-pts">${r.pts} pts per correct pick</div>
+      </div>`;
+    if(!matches.length){
+      roundHtml+=`<div class="ko-tbd-card">
+        <div class="ko-tbd-icon">⏳</div>
+        <div class="ko-tbd-label">Matches will appear once teams are confirmed</div>
+      </div>`;
+    } else {
+      matches.forEach((m,idx)=>{
+        const key=`${r.id}_${idx}`;
+        const saved=predictions.knockout[key]||'';
+        const kickoff=m.kickoff?new Date(m.kickoff):null;
+        const locked=kickoff?now>=new Date(kickoff.getTime()-2*60*60*1000):false;
+        const timeStr=kickoff?kickoff.toLocaleDateString('en-SG',{day:'numeric',month:'short'})+' · '+kickoff.toLocaleTimeString('en-SG',{hour:'2-digit',minute:'2-digit',hour12:false})+' SGT':'TBD';
+        const cdiff=kickoff?new Date(kickoff.getTime()-2*60*60*1000)-now:null;
+        let lockBadge='';
+        if(locked) lockBadge='<span style="font-size:9px;color:var(--red);font-weight:600;">🔒 LOCKED</span>';
+        else if(cdiff&&cdiff<6*3600000) lockBadge=`<span style="font-size:9px;color:var(--gold);">⏱ locks in ${fmtCountdown(cdiff)}</span>`;
+
+        if(!m.teamA||!m.teamB){
+          roundHtml+=`<div class="ko-match-card tbd">
+            <div class="ko-match-time">${timeStr}</div>
+            <div class="ko-match-row">
+              <div class="ko-team-btn disabled">TBD</div>
+              <div class="ko-vs">vs</div>
+              <div class="ko-team-btn disabled">TBD</div>
+            </div>
+            <div class="ko-tbd-note">Teams not yet confirmed</div>
+          </div>`;
+        } else {
+          const fA=flagImg(m.teamA);const fB=flagImg(m.teamB);
+          roundHtml+=`<div class="ko-match-card${locked?' locked':''}">
+            <div class="ko-match-time" style="display:flex;justify-content:space-between;">${timeStr} ${lockBadge}</div>
+            <div class="ko-match-row">
+              <button class="ko-team-btn${saved===m.teamA?' sel':''}" ${locked?'disabled':''} onclick="pickKO('${key}','${m.teamA}')">${fA}${shortName(m.teamA)}</button>
+              <div class="ko-vs">advances</div>
+              <button class="ko-team-btn${saved===m.teamB?' sel':''}" ${locked?'disabled':''} onclick="pickKO('${key}','${m.teamB}')">${fB}${shortName(m.teamB)}</button>
+            </div>
+            ${saved?`<div class="ko-pick-note">✓ You picked: <strong style="color:var(--teal2);">${saved}</strong> to advance</div>`:''}
+          </div>`;
+        }
+      });
     }
-    html+='</div>';
+    roundHtml+='</div>';
+    html+=roundHtml;
   });
+  if(!html) html='<div class="ko-tbd-card"><div class="ko-tbd-icon">🏆</div><div class="ko-tbd-label">Knockout bracket coming soon</div></div>';
   el.innerHTML=html;
+}
+function pickKO(key,team){
+  predictions.knockout[key]=team;
+  renderKnockout();
+}
+function fmtCountdown(ms){
+  const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);
+  return h>0?h+'h '+m+'m':m+'m';
 }
 
 // ══════════════════ RENDER CHAMPION ══════════════════
@@ -1918,6 +2003,53 @@ async function saveResults(){
   await sheetsSet('results','official',results);
   showToast('Results saved — leaderboard updated!');
 }
+async function adminAddKOMatch(){
+  const round=document.getElementById('ko-round-sel').value;
+  const teamA=document.getElementById('ko-teamA').value;
+  const teamB=document.getElementById('ko-teamB').value;
+  const kickoff=document.getElementById('ko-kickoff').value;
+  if(!teamA||!teamB){showToast('Select both teams','err');return;}
+  if(teamA===teamB){showToast('Teams must be different','err');return;}
+  if(!results.ko_schedule)results.ko_schedule={};
+  if(!results.ko_schedule[round])results.ko_schedule[round]=[];
+  results.ko_schedule[round].push({
+    teamA,teamB,
+    kickoff:kickoff?new Date(kickoff).toISOString():null
+  });
+  await sheetsSet('results','official',results);
+  showToast('Match added!');
+  renderKOSchedulePreview();
+  renderKnockout();
+}
+async function adminClearKORound(){
+  const round=document.getElementById('ko-round-sel').value;
+  if(!confirm('Clear all matches for '+round+'?'))return;
+  if(results.ko_schedule)results.ko_schedule[round]=[];
+  await sheetsSet('results','official',results);
+  showToast('Round cleared');
+  renderKOSchedulePreview();
+  renderKnockout();
+}
+function renderKOSchedulePreview(){
+  const el=document.getElementById('ko-schedule-preview');
+  if(!el)return;
+  const sched=results.ko_schedule||{};
+  const total=Object.values(sched).reduce((s,arr)=>s+(arr||[]).length,0);
+  if(!total){el.textContent='No knockout matches added yet.';return;}
+  let html='<div style="display:flex;flex-direction:column;gap:4px;">';
+  KO_ROUNDS.forEach(r=>{
+    const ms=sched[r.id]||[];
+    if(ms.length) ms.forEach((m,i)=>{
+      html+=`<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+        <span style="color:var(--teal2);font-weight:600;">${r.label} M${i+1}:</span>
+        <span style="color:var(--text);margin:0 6px;">${m.teamA||'TBD'} vs ${m.teamB||'TBD'}</span>
+        <span style="color:var(--muted2);font-size:11px;">${m.kickoff?new Date(m.kickoff).toLocaleString('en-SG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'TBD'}</span>
+      </div>`;
+    });
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
 function saveApiKey(){
   const key=document.getElementById('fdorg-key').value.trim();
   if(key){localStorage.setItem('orizon_fdorg_key',key);showToast('API key saved!');}
@@ -1939,7 +2071,7 @@ async function autoFetchResults(){
   status.textContent='Fetching live results...';
   status.style.color='var(--teal)';
   try{
-    const r=await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED',{
+    const r=await fetch(SHEETS_WORKER+'/football/v4/competitions/WC/matches?status=FINISHED',{
       headers:{'X-Auth-Token':key}
     });
     if(!r.ok){status.textContent='API error: '+r.status+'. Check your API key.';status.style.color='var(--red)';return;}
