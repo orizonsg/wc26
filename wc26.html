@@ -1108,7 +1108,7 @@ function doPost(e) { return doGet(e); }</textarea>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
           <div>
             <label style="font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Round</label>
-            <select id="ko-round-sel" style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.15);color:var(--text);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;">
+            <select id="ko-round-sel" style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.15);color:var(--text);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;" onchange="suggestKOTime(this.value)">
               <option value="r32">Round of 32</option>
               <option value="r16">Round of 16</option>
               <option value="qf">Quarter-finals</option>
@@ -1119,7 +1119,7 @@ function doPost(e) { return doGet(e); }</textarea>
           </div>
           <div>
             <label style="font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Kickoff (SGT)</label>
-            <input type="datetime-local" id="ko-kickoff" style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.15);color:var(--text);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;"/>
+            <input type="datetime-local" id="ko-kickoff" step="60" style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.15);color:var(--text);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;"/>
           </div>
           <div>
             <label style="font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Team A (left button)</label>
@@ -1128,7 +1128,7 @@ function doPost(e) { return doGet(e); }</textarea>
             </select>
           </div>
           <div>
-            <label style="font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Team B (right button)</label>
+            <label style="font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px;">Team B (right button) <button onclick="swapKOTeams()" style="padding:1px 6px;border-radius:4px;background:rgba(0,200,180,0.08);border:1px solid rgba(0,200,180,0.2);color:var(--teal);font-size:10px;cursor:pointer;margin-left:4px;">⇄ swap</button></label>
             <select id="ko-teamB" style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.15);color:var(--text);border-radius:var(--r);padding:8px 12px;font-family:var(--font-b);font-size:13px;">
               <option value="">Select team...</option>
             </select>
@@ -2063,32 +2063,81 @@ async function adminAddKOMatch(){
 }
 async function adminClearKORound(){
   const round=document.getElementById('ko-round-sel').value;
-  if(!confirm('Clear all matches for '+round+'?'))return;
+  if(!confirm('Clear all matches for '+round+'? This cannot be undone.'))return;
   if(results.ko_schedule)results.ko_schedule[round]=[];
   await sheetsSet('results','official',results);
   showToast('Round cleared');
   renderKOSchedulePreview();
   renderKnockout();
 }
+// Suggest a default kickoff datetime when round is changed
+const KO_DEFAULT_DATES={
+  r32:'2026-06-29T06:00',
+  r16:'2026-07-03T06:00',
+  qf:'2026-07-09T06:00',
+  sf:'2026-07-14T06:00',
+  '3p':'2026-07-18T06:00',
+  f:'2026-07-19T06:00',
+};
+function suggestKOTime(round){
+  const el=document.getElementById('ko-kickoff');
+  if(el&&!el.value&&KO_DEFAULT_DATES[round])el.value=KO_DEFAULT_DATES[round];
+}
+// Swap Team A and Team B
+function swapKOTeams(){
+  const a=document.getElementById('ko-teamA');
+  const b=document.getElementById('ko-teamB');
+  const tmp=a.value;a.value=b.value;b.value=tmp;
+}
 function renderKOSchedulePreview(){
   const el=document.getElementById('ko-schedule-preview');
   if(!el)return;
   const sched=results.ko_schedule||{};
   const total=Object.values(sched).reduce((s,arr)=>s+(arr||[]).length,0);
-  if(!total){el.textContent='No knockout matches added yet.';return;}
-  let html='<div style="display:flex;flex-direction:column;gap:4px;">';
+  if(!total){el.innerHTML='<span style="color:var(--muted2);">No knockout matches added yet.</span>';return;}
+  let html='';
   KO_ROUNDS.forEach(r=>{
     const ms=sched[r.id]||[];
-    if(ms.length) ms.forEach((m,i)=>{
-      html+=`<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
-        <span style="color:var(--teal2);font-weight:600;">${r.label} M${i+1}:</span>
-        <span style="color:var(--text);margin:0 6px;">${m.teamA||'TBD'} vs ${m.teamB||'TBD'}</span>
-        <span style="color:var(--muted2);font-size:11px;">${m.kickoff?new Date(m.kickoff).toLocaleString('en-SG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'TBD'}</span>
+    if(!ms.length)return;
+    html+=`<div style="margin-bottom:12px;">
+      <div style="font-family:var(--font-d);font-size:9px;letter-spacing:.14em;color:var(--teal);text-transform:uppercase;margin-bottom:6px;">${r.label}</div>`;
+    ms.forEach((m,i)=>{
+      const key=`${r.id}_${i}`;
+      const winner=results[key]||'';
+      const kickoffStr=m.kickoff?new Date(m.kickoff).toLocaleString('en-SG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false})+' SGT':'TBD';
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:var(--r);margin-bottom:4px;flex-wrap:wrap;">
+        <span style="color:var(--muted2);font-size:11px;min-width:60px;">M${i+1} · ${kickoffStr}</span>
+        <span style="color:var(--text);font-weight:500;flex:1;">${m.teamA||'TBD'} vs ${m.teamB||'TBD'}</span>
+        ${m.teamA&&m.teamB?`
+        <select onchange="setKOWinner('${key}',this.value)" style="background:var(--surface);border:1px solid rgba(0,200,180,0.2);color:var(--text);border-radius:6px;padding:4px 8px;font-family:var(--font-b);font-size:12px;cursor:pointer;">
+          <option value="">Result...</option>
+          <option value="${m.teamA}" ${winner===m.teamA?'selected':''}>${m.teamA} wins</option>
+          <option value="${m.teamB}" ${winner===m.teamB?'selected':''}>${m.teamB} wins</option>
+        </select>`:''}
+        ${winner?`<span style="font-size:11px;color:var(--green);font-weight:600;">✓ ${winner}</span>`:''}
+        <button onclick="adminDeleteKOMatch('${r.id}',${i})" style="padding:3px 8px;border-radius:6px;background:rgba(255,68,102,0.08);border:1px solid rgba(255,68,102,0.2);color:var(--red);font-size:11px;cursor:pointer;">✕</button>
       </div>`;
     });
+    html+='</div>';
   });
-  html+='</div>';
   el.innerHTML=html;
+}
+async function setKOWinner(key,team){
+  if(!team)return;
+  results[key]=team;
+  await sheetsSet('results','official',results);
+  showToast('Result saved: '+team+' advances ✓');
+  renderKOSchedulePreview();
+}
+async function adminDeleteKOMatch(round,idx){
+  if(!confirm('Delete this match?'))return;
+  if(results.ko_schedule&&results.ko_schedule[round]){
+    results.ko_schedule[round].splice(idx,1);
+    await sheetsSet('results','official',results);
+    showToast('Match deleted');
+    renderKOSchedulePreview();
+    renderKnockout();
+  }
 }
 function saveApiKey(){
   const key=document.getElementById('fdorg-key').value.trim();
