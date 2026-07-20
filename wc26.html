@@ -1185,6 +1185,53 @@ function doPost(e) { return doGet(e); }</textarea>
           <div id="ko-schedule-preview" style="font-size:12px;color:var(--muted2);">Click Refresh to load knockout matches.</div>
         </div>
       </div>
+
+      <!-- AWARDS + CHAMPION RESULTS -->
+      <div class="card" style="max-width:560px;margin-bottom:12px;">
+        <div class="card-title">🏆 Champion &amp; Award Winners</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;font-weight:300;">
+          Enter the actual tournament winners to calculate final leaderboard scores.
+          Participant predictions are shown below each field to help match spelling.
+        </p>
+
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+
+          <!-- CHAMPION -->
+          <div>
+            <label style="font-size:10px;color:var(--teal);letter-spacing:.12em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px;">👑 World Cup Champion</label>
+            <select id="res-champion" style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.2);color:var(--text);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:13px;">
+              <option value="">Select winning team...</option>
+            </select>
+            <div id="pred-champion" style="margin-top:6px;font-size:11px;color:var(--muted2);font-weight:300;"></div>
+          </div>
+
+          <!-- GOLDEN GLOVE -->
+          <div>
+            <label style="font-size:10px;color:var(--teal);letter-spacing:.12em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px;">🥅 Golden Glove (Best Goalkeeper)</label>
+            <input type="text" id="res-glove" placeholder="Player name..." style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.2);color:var(--text);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:13px;"/>
+            <div id="pred-glove" style="margin-top:6px;font-size:11px;color:var(--muted2);font-weight:300;"></div>
+          </div>
+
+          <!-- GOLDEN BOOT -->
+          <div>
+            <label style="font-size:10px;color:var(--teal);letter-spacing:.12em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px;">👟 Golden Boot (Top Scorer)</label>
+            <input type="text" id="res-boot" placeholder="Player name..." style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.2);color:var(--text);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:13px;"/>
+            <div id="pred-boot" style="margin-top:6px;font-size:11px;color:var(--muted2);font-weight:300;"></div>
+          </div>
+
+          <!-- TOP ASSISTER -->
+          <div>
+            <label style="font-size:10px;color:var(--teal);letter-spacing:.12em;text-transform:uppercase;font-weight:600;display:block;margin-bottom:6px;">🎯 Top Assister</label>
+            <input type="text" id="res-assist" placeholder="Player name..." style="width:100%;background:var(--surface2);border:1px solid rgba(0,200,180,0.2);color:var(--text);border-radius:var(--r);padding:9px 12px;font-family:var(--font-b);font-size:13px;"/>
+            <div id="pred-assist" style="margin-top:6px;font-size:11px;color:var(--muted2);font-weight:300;"></div>
+          </div>
+
+        </div>
+
+        <button onclick="saveAwardResults()" style="margin-top:1.25rem;padding:10px 24px;border-radius:var(--r);background:linear-gradient(135deg,var(--teal),#009e8e);border:none;color:#000;font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.1em;cursor:pointer;">Save Award Results</button>
+        <div id="award-save-status" style="margin-top:8px;font-size:11px;color:var(--muted2);"></div>
+      </div>
+
     </div>
   </div>
 
@@ -1671,9 +1718,39 @@ async function loadPredictions(){
 }
 async function savePredictions(){
   if(!wallet)return;
-  await sheetsSet('predictions',wallet,predictions);
-  await sheetsSet('users',wallet,{wallet,username:username||'',ts:Date.now()});
-  showToast('Predictions saved!');
+
+  // ── MERGE STRATEGY: never overwrite server data with empty local data ──
+  // Fetch current server version first
+  let merged = {...predictions};
+  try{
+    const server = await sheetsGet('predictions', wallet);
+    if(server && typeof server === 'object'){
+      // For locked sections: only use local data if it has actual picks
+      // Otherwise keep server version (protects against blank overwrites)
+      const hasGroups  = Object.keys(predictions.groups||{}).length > 0;
+      const hasTable   = Object.keys(predictions.table||{}).length > 0;
+      const hasChamp   = !!predictions.champion;
+      const hasAwards  = Object.values(predictions.awards||{}).some(a=>a&&a.player);
+      const hasKO      = Object.keys(predictions.knockout||{}).length > 0;
+
+      merged = {
+        groups:   hasGroups  ? predictions.groups   : (server.groups   || {}),
+        table:    hasTable   ? predictions.table    : (server.table    || {}),
+        knockout: hasKO      ? predictions.knockout : (server.knockout || {}),
+        champion: hasChamp   ? predictions.champion : (server.champion || ''),
+        awards:   hasAwards  ? predictions.awards   : (server.awards   || predictions.awards),
+      };
+
+      // Sync local predictions to merged so UI stays consistent
+      predictions = merged;
+    }
+  }catch(e){
+    console.warn('Merge fetch failed — saving local state only', e);
+  }
+
+  await sheetsSet('predictions', wallet, merged);
+  await sheetsSet('users', wallet, {wallet, username:username||'', ts:Date.now()});
+  showToast('Picks saved!');
   updateUserBars();
 }
 
@@ -2081,6 +2158,61 @@ async function saveResults(){
   await sheetsSet('results','official',results);
   showToast('Results saved — leaderboard updated!');
 }
+
+async function saveAwardResults(){
+  const champ  = document.getElementById('res-champion')?.value.trim();
+  const glove  = document.getElementById('res-glove')?.value.trim();
+  const boot   = document.getElementById('res-boot')?.value.trim();
+  const assist = document.getElementById('res-assist')?.value.trim();
+
+  if(champ)  results.champion   = champ;
+  if(glove)  results.award_glove  = glove;
+  if(boot)   results.award_boot   = boot;
+  if(assist) results.award_assist = assist;
+
+  await sheetsSet('results','official',results);
+  const el=document.getElementById('award-save-status');
+  if(el){el.textContent='✓ Award results saved! Leaderboard updated.';el.style.color='var(--green)';}
+  showToast('Award results saved!');
+}
+
+async function renderAwardResultsAdmin(){
+  // Populate champion dropdown
+  const champSel=document.getElementById('res-champion');
+  if(champSel){
+    if(champSel.options.length<=1)
+      champSel.innerHTML='<option value="">Select winning team...</option>'+ALL_TEAMS.map(t=>`<option value="${t}"${results.champion===t?' selected':''}>${t}</option>`).join('');
+    else if(results.champion) champSel.value=results.champion;
+  }
+  // Pre-fill saved values
+  const g=document.getElementById('res-glove');  if(g&&results.award_glove)  g.value=results.award_glove;
+  const b=document.getElementById('res-boot');   if(b&&results.award_boot)   b.value=results.award_boot;
+  const a=document.getElementById('res-assist'); if(a&&results.award_assist) a.value=results.award_assist;
+
+  // Load all predictions and tally what people picked
+  try{
+    const allPreds=await sheetsAll('predictions');
+    const champTally={}, gloveTally={}, bootTally={}, assistTally={};
+    for(const addr in allPreds){
+      const p=allPreds[addr];
+      if(!p)continue;
+      if(p.champion) champTally[p.champion]=(champTally[p.champion]||0)+1;
+      if(p.awards?.glove?.player){const k=p.awards.glove.player.trim().toLowerCase();gloveTally[k]=(gloveTally[k]||0)+1;}
+      if(p.awards?.boot?.player){const k=p.awards.boot.player.trim().toLowerCase();bootTally[k]=(bootTally[k]||0)+1;}
+      if(p.awards?.assist?.player){const k=p.awards.assist.player.trim().toLowerCase();assistTally[k]=(assistTally[k]||0)+1;}
+    }
+    const fmt=obj=>{
+      const sorted=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
+      if(!sorted.length)return'No predictions';
+      return sorted.map(([k,v])=>`<span style="color:var(--text);font-weight:500;">${k}</span> <span style="color:var(--teal2);">(${v})</span>`).join(' &nbsp;·&nbsp; ');
+    };
+    const setTally=(id,obj)=>{const el=document.getElementById(id);if(el)el.innerHTML='Predictions: '+fmt(obj);};
+    setTally('pred-champion',champTally);
+    setTally('pred-glove',gloveTally);
+    setTally('pred-boot',bootTally);
+    setTally('pred-assist',assistTally);
+  }catch(e){}
+}
 async function adminAddKOMatch(){
   const round=document.getElementById('ko-round-sel').value;
   const teamA=document.getElementById('ko-teamA').value;
@@ -2369,6 +2501,7 @@ function showTab(id,btn){
       }catch(e){}
       renderKOSchedulePreview();
       renderGTAdmin();
+      renderAwardResultsAdmin();
       ['ko-teamA','ko-teamB'].forEach(sid=>{
         const s=document.getElementById(sid);
         if(s&&s.options.length<=1)
